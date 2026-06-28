@@ -8,7 +8,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, "shared/fs-shared.js"),
+        "fs-shared": path.resolve(__dirname, "shared/fs-shared.js"),
         auth: path.resolve(__dirname, "shared/auth.js"),
         ui: path.resolve(__dirname, "shared/ui.js"),
         demo: path.resolve(__dirname, "shared/demo.js"),

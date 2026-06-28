@@ -328,9 +328,26 @@
 
   // ─── Verify Stored Token ───────────────────────────────────────
   ns.verifyHandshake = async function () {
+    var currentPage = window.location.pathname.split("/").pop();
+    if (!currentPage) currentPage = "index.html";
+
+    var journeyPages = [
+      "dashboard.html",
+      "radar.html",
+      "simulation.html",
+      "twin.html",
+      "rescue.html",
+      "rag.html",
+      "timeline.html",
+      "analytics.html"
+    ];
+    var isProtected = journeyPages.indexOf(currentPage) !== -1;
+
     var token = ns.auth.getToken();
     if (!token) {
-      ns.showLoginOverlay();
+      if (isProtected) {
+        ns.showLoginOverlay();
+      }
       return;
     }
 
@@ -340,7 +357,9 @@
       });
       if (!response.ok) {
         ns.auth.clearSession();
-        ns.showLoginOverlay();
+        if (isProtected) {
+          ns.showLoginOverlay();
+        }
       }
     } catch (e) {
       // Offline fallback — don't block if server is unreachable
