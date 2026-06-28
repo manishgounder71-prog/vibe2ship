@@ -171,7 +171,7 @@
       window.location.href = "simulation.html";
     },
     "show twin": function () {
-      speak("Accessing digital twin neural link.");
+      speak("Accessing your digital twin.");
       window.location.href = "twin.html";
     },
     "show rescue": function () {

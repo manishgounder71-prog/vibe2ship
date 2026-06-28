@@ -22,7 +22,6 @@ import pytest
 import time
 import socket
 import os
-import sys
 import tempfile
 from threading import Thread
 
@@ -88,7 +87,11 @@ def server_url(e2e_db_path):
 
 @pytest.fixture(scope="function")
 def page(browser, server_url):
-    """Create a new browser context + page per test with auth token pre-set."""
+    """Create a new browser context + page per test with a valid JWT pre-loaded.
+
+    Registers a test user via the API and stores the JWT in localStorage
+    so the client-side auth interceptor (auth.js) injects it automatically.
+    """
     context = browser.new_context(
         viewport={"width": 1280, "height": 800},
         storage_state=None,
@@ -96,9 +99,40 @@ def page(browser, server_url):
     )
     page = context.new_page()
 
-    # Set auth token in localStorage before navigating
+    # Register a test user via API to get a valid JWT
+    import urllib.request
+    import json
+    _E2E_USER = {"username": "e2e_user", "email": "e2e@futureshield.ai", "password": "testpass123"}
+    jwt_token = _API_TOKEN  # fallback
+    try:
+        req = urllib.request.Request(
+            f"{server_url}/api/auth/register",
+            method="POST",
+            data=json.dumps(_E2E_USER).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        resp = urllib.request.urlopen(req)
+        data = json.loads(resp.read())
+        jwt_token = data["access_token"]
+    except Exception:
+        # User may already exist from a prior test; try login instead
+        try:
+            req = urllib.request.Request(
+                f"{server_url}/api/auth/login",
+                method="POST",
+                data=json.dumps({"username": "e2e_user", "password": "testpass123"}).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            resp = urllib.request.urlopen(req)
+            data = json.loads(resp.read())
+            jwt_token = data["access_token"]
+        except Exception:
+            pass
+
+    # Pre-load the JWT into localStorage so auth.js fetch interceptor picks it up
     page.add_init_script(f"""
-        localStorage.setItem('shield_access_token', '{_API_TOKEN}');
+        localStorage.setItem('futureshield_jwt_token', '{jwt_token}');
+        localStorage.setItem('futureshield_user', JSON.stringify({{'id': 1, 'username': 'e2e_user', 'email': 'e2e@futureshield.ai'}}));
     """)
 
     yield page
@@ -173,19 +207,19 @@ class TestLandingPage:
         # Navigation links should exist
         nav_links = page.locator("nav a")
         count = nav_links.count()
-        assert count >= 3  # OS CAPABILITIES, NEURAL LINK, FLEET DEPLOYMENT
+        assert count >= 3  # OS CAPABILITIES, DIGITAL TWIN, THREAT RADAR
 
 
 class TestDashboardPage:
     """Tests for the dashboard page (dashboard.html)."""
 
     def test_dashboard_loads_with_token(self, page, server_url):
-        """Dashboard should render without login overlay when token is present."""
+        """Dashboard should render without login overlay when JWT is pre-loaded."""
         page.goto(f"{server_url}/dashboard.html")
         page.wait_for_load_state("networkidle")
 
-        # Login overlay should NOT appear (we set the token via add_init_script)
-        overlay = page.locator("#shield-login-overlay")
+        # Login overlay should NOT appear (JWT is pre-loaded in localStorage)
+        overlay = page.locator("#futureshield-auth-overlay")
         assert overlay.count() == 0 or not overlay.is_visible()
 
         # Core dashboard elements should be visible
@@ -266,11 +300,14 @@ class TestDashboardPage:
 
 
 class TestLoginHandshake:
-    """Tests for the security handshake overlay."""
+    """Tests for the JWT authentication overlay (auth.js).
 
-    def test_login_overlay_appears_with_invalid_token(self, page, server_url):
-        """When no valid token is present, the login overlay should show."""
-        # Use a clean context without the pre-set token
+    The current auth system uses username/password login via
+    POST /api/auth/login, not a single token input field.
+    """
+
+    def test_login_overlay_appears_without_token(self, page, server_url):
+        """When no valid JWT is present, the login overlay should show."""
         context = page.context.browser.new_context(
             viewport={"width": 1280, "height": 800},
             bypass_csp=True,
@@ -281,19 +318,18 @@ class TestLoginHandshake:
             clean_page.goto(f"{server_url}/dashboard.html")
             clean_page.wait_for_load_state("networkidle")
 
-            # Login overlay should appear
-            overlay = clean_page.locator("#shield-login-overlay")
-            clean_page.wait_for_selector("#shield-login-overlay", timeout=10000)
+            overlay = clean_page.locator("#futureshield-auth-overlay")
+            clean_page.wait_for_selector("#futureshield-auth-overlay", timeout=10000)
             assert overlay.is_visible()
 
-            # Title should mention security
+            # Title should mention FUTURESHIELD ACCESS
             title = overlay.locator("h2")
-            assert "SECURITY" in title.inner_text()
+            assert "FUTURESHIELD" in title.inner_text()
         finally:
             context.close()
 
-    def test_login_with_invalid_token_shows_error(self, page, server_url):
-        """Entering wrong credentials should show an error message."""
+    def test_login_with_invalid_credentials_shows_error(self, page, server_url):
+        """Entering wrong username/password should show an error message."""
         context = page.context.browser.new_context(
             viewport={"width": 1280, "height": 800},
             bypass_csp=True,
@@ -304,25 +340,27 @@ class TestLoginHandshake:
             clean_page.goto(f"{server_url}/dashboard.html")
             clean_page.wait_for_load_state("networkidle")
 
-            overlay = clean_page.locator("#shield-login-overlay")
-            clean_page.wait_for_selector("#shield-login-overlay", timeout=10000)
+            overlay = clean_page.locator("#futureshield-auth-overlay")
+            clean_page.wait_for_selector("#futureshield-auth-overlay", timeout=10000)
 
-            input_field = clean_page.locator("#shield-token-input")
-            submit_btn = clean_page.locator("#shield-login-submit")
-            error_msg = clean_page.locator("#shield-login-error")
+            username_input = clean_page.locator("#auth-login-username")
+            password_input = clean_page.locator("#auth-login-password")
+            submit_btn = clean_page.locator("#auth-login-submit")
+            error_msg = clean_page.locator("#auth-error-msg")
 
-            # Enter wrong token
-            input_field.fill("wrong-token-123")
+            # Enter wrong credentials
+            username_input.fill("wronguser")
+            password_input.fill("wrongpass")
             submit_btn.click()
 
             # Error should appear
-            clean_page.wait_for_selector("#shield-login-error:not(.hidden)", timeout=5000)
+            clean_page.wait_for_timeout(2000)
             assert error_msg.is_visible()
         finally:
             context.close()
 
-    def test_login_with_valid_token_succeeds(self, page, server_url):
-        """Entering correct credentials should dismiss the overlay."""
+    def test_login_with_valid_credentials_succeeds(self, page, server_url):
+        """Entering correct username/password should dismiss the overlay."""
         context = page.context.browser.new_context(
             viewport={"width": 1280, "height": 800},
             bypass_csp=True,
@@ -333,18 +371,34 @@ class TestLoginHandshake:
             clean_page.goto(f"{server_url}/dashboard.html")
             clean_page.wait_for_load_state("networkidle")
 
-            overlay = clean_page.locator("#shield-login-overlay")
-            clean_page.wait_for_selector("#shield-login-overlay", timeout=10000)
+            overlay = clean_page.locator("#futureshield-auth-overlay")
+            clean_page.wait_for_selector("#futureshield-auth-overlay", timeout=10000)
 
-            input_field = clean_page.locator("#shield-token-input")
-            submit_btn = clean_page.locator("#shield-login-submit")
+            # First register a user via API (clean context has no auth)
+            import urllib.request
+            import json
+            creds = {"username": "login_test_user", "email": "login@test.ai", "password": "logintest123"}
+            try:
+                req = urllib.request.Request(
+                    f"{server_url}/api/auth/register",
+                    method="POST",
+                    data=json.dumps(creds).encode(),
+                    headers={"Content-Type": "application/json"},
+                )
+                urllib.request.urlopen(req)
+            except Exception:
+                pass  # User may already exist; login will still work below
 
-            # Enter correct token
-            input_field.fill(_API_TOKEN)
+            username_input = clean_page.locator("#auth-login-username")
+            password_input = clean_page.locator("#auth-login-password")
+            submit_btn = clean_page.locator("#auth-login-submit")
+
+            username_input.fill(creds["username"])
+            password_input.fill(creds["password"])
             submit_btn.click()
 
             # Overlay should disappear (page reloads on success)
-            clean_page.wait_for_timeout(2000)
+            clean_page.wait_for_timeout(3000)
             assert overlay.count() == 0 or not overlay.is_visible()
 
             # Dashboard should now be visible
