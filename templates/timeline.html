@@ -236,8 +236,20 @@
 
   // ─── Filter Chips ──────────────────────────────────────────────
   function initFilters() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var filterParam = urlParams.get("filter");
+    if (filterParam) {
+      currentFilter = filterParam;
+    }
+
     var chips = document.querySelectorAll(".filter-chip");
     chips.forEach(function (chip) {
+      if (chip.dataset.filter === currentFilter) {
+        chip.classList.add("active");
+      } else {
+        chip.classList.remove("active");
+      }
+
       chip.addEventListener("click", function () {
         chips.forEach(function (c) { c.classList.remove("active"); });
         this.classList.add("active");
