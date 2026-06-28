@@ -235,7 +235,7 @@
   }
 
   // ─── Filter Chips ──────────────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", function () {
+  function initFilters() {
     var chips = document.querySelectorAll(".filter-chip");
     chips.forEach(function (chip) {
       chip.addEventListener("click", function () {
@@ -247,7 +247,13 @@
     });
 
     loadTimeline();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initFilters);
+  } else {
+    initFilters();
+  }
 })();
 </script>
 {% endblock %}
