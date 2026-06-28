@@ -8,7 +8,7 @@
  * - IMAGES: External images — cache on fetch, serve cache-first
  */
 
-const SW_VERSION = 'v1.0.1';
+const SW_VERSION = 'v1.0.2';
 const STATIC_CACHE = 'futureshield-static-' + SW_VERSION;
 const API_CACHE = 'futureshield-api-' + SW_VERSION;
 const IMAGE_CACHE = 'futureshield-images-' + SW_VERSION;
