@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0c0e12"/>
+      <stop offset="100%" style="stop-color:#1d2023"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff"/>
+      <stop offset="100%" style="stop-color:#571bc1"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3cd7ff"/>
+      <stop offset="100%" style="stop-color:#d0bcff"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <!-- Hexagon shield outer -->
+  <polygon points="256,64 416,144 416,304 256,448 96,304 96,144" fill="none" stroke="url(#accent)" stroke-width="4" opacity="0.8"/>
+  <!-- Hexagon shield inner -->
+  <polygon points="256,100 380,164 380,290 256,412 132,290 132,164" fill="none" stroke="url(#glow)" stroke-width="2" opacity="0.4"/>
+  <!-- Center shield icon -->
+  <path d="M256 120 L340 168 L340 280 C340 340 256 380 256 380 C256 380 172 340 172 280 L172 168 Z" fill="url(#accent)" opacity="0.9"/>
+  <!-- Checkmark inside shield -->
+  <polyline points="220,256 245,280 295,230" fill="none" stroke="#0c0e12" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Glow dot top right -->
+  <circle cx="340" cy="140" r="6" fill="#3cd7ff" opacity="0.8">
+    <animate attributeName="r" dur="2s" repeatCount="indefinite" values="6;10;6"/>
+    <animate attributeName="opacity" dur="2s" repeatCount="indefinite" values="0.8;0.2;0.8"/>
+  </circle>
+  <!-- Orbital ring -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#3cd7ff" stroke-width="0.5" opacity="0.15" stroke-dasharray="8 12"/>
+</svg>

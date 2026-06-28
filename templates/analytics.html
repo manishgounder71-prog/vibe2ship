@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+{% set active_page = 'analytics' %}
+{% block title %}FutureShield AI | Focus Analytics{% endblock %}
+{% block body_class %} pb-32{% endblock %}
+
+{% block head_extra %}
+<style>
+  .stat-card { transition: all 0.3s ease; }
+  .stat-card:hover { transform: translateY(-2px); }
+  .bar-chart-bar { transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .energy-dot { transition: all 0.3s ease; }
+  .energy-dot:hover { transform: scale(1.5); }
+  .tooltip-box { position: relative; }
+  .tooltip-box:hover .tooltip-content { opacity: 1; transform: translateY(0); }
+  .tooltip-content { opacity: 0; transform: translateY(4px); transition: all 0.2s ease; pointer-events: none; }
+  @keyframes growIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .grow-in { animation: growIn 0.4s ease forwards; }
+</style>
+{% endblock %}
+
+{% block header %}
+<header class="fixed top-0 w-full bg-surface/60 backdrop-blur-3xl border-b border-white/10 z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16">
+  <div class="flex items-center gap-3 cursor-pointer active:scale-95 transition-all" onclick="window.location.href='index.html'">
+    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">hub</span>
+    <h1 class="font-label-caps text-label-caps tracking-widest text-primary-fixed-dim">FUTURESHIELD AI</h1>
+  </div>
+  <div class="flex items-center gap-4">
+    <span class="font-label-caps text-[9px] text-on-surface-variant">FOCUS INTELLIGENCE</span>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="pt-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto pb-32">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+      <h2 class="font-headline-md text-headline-md text-white">Focus Analytics</h2>
+      <p class="font-body-md text-body-md text-on-surface-variant mt-1">Session trends, energy patterns, and productivity metrics</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <select id="analytics-days" class="bg-surface-container-lowest/50 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-label-caps text-on-surface-variant focus:outline-none focus:border-primary/50 tracking-wider uppercase">
+        <option value="7">Last 7 Days</option>
+        <option value="14">Last 14 Days</option>
+        <option value="30" selected>Last 30 Days</option>
+        <option value="90">Last 90 Days</option>
+      </select>
+      <button onclick="loadAnalytics()" class="bg-primary/10 border border-primary/20 px-3 py-2 rounded-lg font-label-caps text-[10px] text-primary hover:bg-primary/20 transition-all active:scale-95 tracking-wider uppercase flex items-center gap-1">
+        <span class="material-symbols-outlined text-[14px]">refresh</span> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="analytics-loading" class="flex items-center justify-center py-20">
+    <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <!-- Content -->
+  <div id="analytics-content" class="hidden space-y-gutter">
+    <!-- Overview Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="glass-card p-5 rounded-xl stat-card" style="animation-delay:0.05s">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+          <span class="font-label-caps text-[9px] text-on-surface-variant uppercase tracking-wider">Total Sessions</span>
+        </div>
+        <p id="stat-total-sessions" class="font-metric-xl text-headline-md text-white">—</p>
+      </div>
+      <div class="glass-card p-5 rounded-xl stat-card" style="animation-delay:0.1s">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-secondary text-sm">schedule</span>
+          <span class="font-label-caps text-[9px] text-on-surface-variant uppercase tracking-wider">Total Minutes</span>
+        </div>
+        <p id="stat-total-minutes" class="font-metric-xl text-headline-md text-white">—</p>
+      </div>
+      <div class="glass-card p-5 rounded-xl stat-card" style="animation-delay:0.15s">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-tertiary text-sm">bolt</span>
+          <span class="font-label-caps text-[9px] text-on-surface-variant uppercase tracking-wider">Avg Energy</span>
+        </div>
+        <p id="stat-avg-energy" class="font-metric-xl text-headline-md text-white">—</p>
+      </div>
+      <div class="glass-card p-5 rounded-xl stat-card" style="animation-delay:0.2s">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-primary-fixed-dim text-sm">local_fire_department</span>
+          <span class="font-label-caps text-[9px] text-on-surface-variant uppercase tracking-wider">Streak</span>
+        </div>
+        <p id="stat-streak" class="font-metric-xl text-headline-md text-white">—</p>
+      </div>
+    </div>
+
+    <!-- Daily Chart -->
+    <div class="glass-card p-6 rounded-xl">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary-fixed-dim">bar_chart</span>
+          <h3 class="font-label-caps text-[11px] text-white uppercase tracking-wider">Daily Focus Minutes</h3>
+        </div>
+        <span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-wider" id="best-day-label">Best Day: —</span>
+      </div>
+      <div id="daily-chart" class="flex items-end gap-1.5 h-48 md:h-64 px-2 pb-8 relative">
+        <!-- Bars rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Lower Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+      <!-- Energy Distribution -->
+      <div class="glass-card p-6 rounded-xl">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="material-symbols-outlined text-tertiary">energy_savings_leaf</span>
+          <h3 class="font-label-caps text-[11px] text-white uppercase tracking-wider">Energy Distribution</h3>
+        </div>
+        <div id="energy-chart" class="flex items-end justify-center gap-6 h-40">
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative w-16 h-32 bg-white/5 rounded-lg overflow-hidden">
+              <div id="energy-bar-low" class="absolute bottom-0 w-full rounded-lg bar-chart-bar" style="height:0%;background:linear-gradient(to top, #ffb4ab, #ff897a);"></div>
+            </div>
+            <span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Low (1-3)</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative w-16 h-32 bg-white/5 rounded-lg overflow-hidden">
+              <div id="energy-bar-medium" class="absolute bottom-0 w-full rounded-lg bar-chart-bar" style="height:0%;background:linear-gradient(to top, #d0bcff, #b69dff);"></div>
+            </div>
+            <span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Med (4-6)</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative w-16 h-32 bg-white/5 rounded-lg overflow-hidden">
+              <div id="energy-bar-high" class="absolute bottom-0 w-full rounded-lg bar-chart-bar" style="height:0%;background:linear-gradient(to top, #00d4ff, #3cd7ff);"></div>
+            </div>
+            <span class="font-label-caps text-[9px] text-on-surface-variant uppercase">High (7-10)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session Type Breakdown -->
+      <div class="glass-card p-6 rounded-xl">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="material-symbols-outlined text-secondary">donut_small</span>
+          <h3 class="font-label-caps text-[11px] text-white uppercase tracking-wider">Session Types</h3>
+        </div>
+        <div id="type-breakdown" class="space-y-3">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Avg Duration by Type -->
+    <div class="glass-card p-6 rounded-xl">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="material-symbols-outlined text-primary">speed</span>
+        <h3 class="font-label-caps text-[11px] text-white uppercase tracking-wider">Average Duration by Type</h3>
+      </div>
+      <div id="duration-chart" class="space-y-4">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div id="analytics-error" class="hidden text-center py-20">
+    <span class="material-symbols-outlined text-5xl text-error/50 mb-4">error_outline</span>
+    <p id="analytics-error-text" class="font-body-md text-body-md text-error">Failed to load analytics.</p>
+    <button onclick="loadAnalytics()" class="mt-4 bg-primary/10 border border-primary/20 px-4 py-2 rounded-lg font-label-caps text-[10px] text-primary hover:bg-primary/20 transition-all">Retry</button>
+  </div>
+</main>
+{% endblock %}
+
+{% block js_extra %}
+<script>
+(function () {
+  "use strict";
+
+  function escapeHtml(text) {
+    if (!text) return "";
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+  }
+
+  function renderDailyChart(data) {
+    var container = document.getElementById("daily-chart");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      container.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-xs text-on-surface-variant">No session data for this period</div>';
+      return;
+    }
+
+    var maxMin = 0;
+    data.forEach(function (d) { if (d.total_minutes > maxMin) maxMin = d.total_minutes; });
+    if (maxMin === 0) maxMin = 1;
+
+    data.forEach(function (day, i) {
+      var heightPct = Math.max(4, (day.total_minutes / maxMin) * 100);
+      var bar = document.createElement("div");
+      bar.className = "flex-1 flex flex-col items-center gap-1 relative group";
+      bar.style.animationDelay = (i * 30) + "ms";
+
+      var fill = document.createElement("div");
+      fill.className = "w-full rounded-t-sm bar-chart-bar relative cursor-pointer";
+      fill.style.height = "0%";
+      fill.style.background = day.total_minutes > 0
+        ? "linear-gradient(to top, rgba(0,212,255,0.8), rgba(60,215,255,0.4))"
+        : "rgba(255,255,255,0.03)";
+      fill.style.borderRadius = "4px 4px 0 0";
+      fill.style.minHeight = "4px";
+
+      // Tooltip
+      var tooltip = document.createElement("div");
+      tooltip.className = "absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-low border border-white/10 px-2 py-1 rounded text-[8px] font-label-caps text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none";
+      tooltip.textContent = day.total_minutes + " min · " + (day.sessions || 0) + " sessions";
+
+      fill.appendChild(tooltip);
+
+      // Animate in
+      setTimeout(function () {
+        fill.style.height = heightPct + "%";
+      }, i * 40);
+
+      var label = document.createElement("span");
+      label.className = "text-[7px] font-label-caps text-on-surface-variant/50 uppercase mt-1";
+      label.textContent = day.day ? day.day.slice(5) : "";
+
+      bar.appendChild(fill);
+      bar.appendChild(label);
+      container.appendChild(bar);
+    });
+  }
+
+  function renderEnergyChart(data) {
+    if (!data) return;
+    var total = (data.low || 0) + (data.medium || 0) + (data.high || 0);
+    if (total === 0) total = 1;
+
+    var lowPct = ((data.low || 0) / total) * 100;
+    var medPct = ((data.medium || 0) / total) * 100;
+    var highPct = ((data.high || 0) / total) * 100;
+
+    var lowBar = document.getElementById("energy-bar-low");
+    var medBar = document.getElementById("energy-bar-medium");
+    var highBar = document.getElementById("energy-bar-high");
+
+    setTimeout(function () { if (lowBar) lowBar.style.height = Math.max(4, lowPct) + "%"; }, 100);
+    setTimeout(function () { if (medBar) medBar.style.height = Math.max(4, medPct) + "%"; }, 200);
+    setTimeout(function () { if (highBar) highBar.style.height = Math.max(4, highPct) + "%"; }, 300);
+  }
+
+  function renderTypeBreakdown(types) {
+    var container = document.getElementById("type-breakdown");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!types || types.length === 0) {
+      container.innerHTML = '<p class="text-xs text-on-surface-variant">No session data available</p>';
+      return;
+    }
+
+    var total = 0;
+    types.forEach(function (t) { total += t.count; });
+    if (total === 0) total = 1;
+
+    var colors = ["#00d4ff", "#d0bcff", "#93ecff", "#ffb4ab", "#c4abff"];
+    var icons = { focus: "timelapse", deep_work: "psychology", pomodoro: "restart_alt" };
+
+    types.forEach(function (t, i) {
+      var pct = Math.round((t.count / total) * 100);
+      var bar = document.createElement("div");
+      bar.className = "grow-in";
+      bar.style.animationDelay = (i * 100) + "ms";
+
+      bar.innerHTML =
+        '<div class="flex items-center gap-3 mb-1">' +
+          '<span class="material-symbols-outlined" style="font-size:16px;color:' + colors[i % colors.length] + '">' + (icons[t.type] || "circle") + '</span>' +
+          '<span class="font-label-caps text-[10px] text-white flex-1 capitalize">' + escapeHtml(t.type) + '</span>' +
+          '<span class="font-label-caps text-[9px] text-on-surface-variant">' + t.count + ' (' + pct + '%)</span>' +
+        '</div>' +
+        '<div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">' +
+          '<div class="h-full rounded-full bar-chart-bar" style="width:0%;background:' + colors[i % colors.length] + ';"></div>' +
+        '</div>';
+
+      container.appendChild(bar);
+
+      // Animate bar
+      setTimeout(function () {
+        var inner = bar.querySelector(".bar-chart-bar");
+        if (inner) inner.style.width = pct + "%";
+      }, 200 + i * 100);
+    });
+  }
+
+  function renderDurationChart(avgDurations) {
+    var container = document.getElementById("duration-chart");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!avgDurations || avgDurations.length === 0) {
+      container.innerHTML = '<p class="text-xs text-on-surface-variant">No completed sessions with duration data</p>';
+      return;
+    }
+
+    var maxMin = 0;
+    avgDurations.forEach(function (d) { if (d.avg_minutes > maxMin) maxMin = d.avg_minutes; });
+    if (maxMin === 0) maxMin = 1;
+
+    var colors = ["#00d4ff", "#d0bcff", "#93ecff", "#ffb4ab"];
+    var icons = { focus: "timelapse", deep_work: "psychology", pomodoro: "restart_alt" };
+
+    avgDurations.forEach(function (d, i) {
+      var pct = Math.max(4, (d.avg_minutes / maxMin) * 100);
+      var row = document.createElement("div");
+      row.className = "grow-in";
+      row.style.animationDelay = (i * 80) + "ms";
+
+      row.innerHTML =
+        '<div class="flex items-center gap-3 mb-1">' +
+          '<span class="material-symbols-outlined" style="font-size:16px;color:' + colors[i % colors.length] + '">' + (icons[d.type] || "circle") + '</span>' +
+          '<span class="font-label-caps text-[10px] text-white flex-1 capitalize">' + escapeHtml(d.type) + '</span>' +
+          '<span class="font-label-caps text-[9px] text-primary">' + d.avg_minutes + ' min</span>' +
+          '<span class="font-label-caps text-[8px] text-on-surface-variant">' + d.count + ' sessions</span>' +
+        '</div>' +
+        '<div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">' +
+          '<div class="h-full rounded-full bar-chart-bar" style="width:0%;background:' + colors[i % colors.length] + ';"></div>' +
+        '</div>';
+
+      container.appendChild(row);
+
+      setTimeout(function () {
+        var inner = row.querySelector(".bar-chart-bar");
+        if (inner) inner.style.width = pct + "%";
+      }, 200 + i * 80);
+    });
+  }
+
+  function loadAnalytics() {
+    var loading = document.getElementById("analytics-loading");
+    var content = document.getElementById("analytics-content");
+    var error = document.getElementById("analytics-error");
+    var days = document.getElementById("analytics-days").value;
+
+    loading.classList.remove("hidden");
+    content.classList.add("hidden");
+    error.classList.add("hidden");
+
+    fetch("/api/analytics/focus?days=" + days)
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        var overall = data.overall || {};
+
+        document.getElementById("stat-total-sessions").textContent = overall.total_sessions || 0;
+        document.getElementById("stat-total-minutes").textContent = (overall.total_focus_minutes || 0) + "m";
+        document.getElementById("stat-avg-energy").textContent = overall.avg_energy_rating || "—";
+        document.getElementById("stat-streak").textContent = (overall.current_streak || 0) + " days";
+
+        var bestDay = overall.best_day;
+        var bestLabel = document.getElementById("best-day-label");
+        if (bestLabel) {
+          bestLabel.textContent = bestDay
+            ? "Best Day: " + bestDay.day + " (" + bestDay.total_minutes + " min)"
+            : "Best Day: —";
+        }
+
+        renderDailyChart(data.daily || []);
+        renderEnergyChart(data.energy_distribution || {});
+        renderTypeBreakdown(data.type_breakdown || []);
+        renderDurationChart(data.avg_durations || []);
+
+        loading.classList.add("hidden");
+        content.classList.remove("hidden");
+
+        // Fade in content items
+        var items = content.querySelectorAll(".stat-card, .glass-card");
+        items.forEach(function (item, i) {
+          item.style.opacity = "0";
+          item.style.transform = "translateY(8px)";
+          item.style.transition = "all 0.4s ease";
+          setTimeout(function () {
+            item.style.opacity = "1";
+            item.style.transform = "translateY(0)";
+          }, 80 + i * 60);
+        });
+      })
+      .catch(function (e) {
+        console.error("Analytics error:", e);
+        loading.classList.add("hidden");
+        error.classList.remove("hidden");
+        document.getElementById("analytics-error-text").textContent = "Failed to load analytics: " + e.message;
+      });
+  }
+
+  // Auto-load on page load
+  document.addEventListener("DOMContentLoaded", function () {
+    loadAnalytics();
+    document.getElementById("analytics-days").addEventListener("change", loadAnalytics);
+  });
+
+  // Expose for refresh button
+  window.loadAnalytics = loadAnalytics;
+})();
+</script>
+{% endblock %}

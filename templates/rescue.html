@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% set active_page = 'rescue' %}
+{% block title %}AI Rescue Center | FutureShield AI{% endblock %}
+{% block body_class %} pb-32{% endblock %}
+
+{% block head_extra %}
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+  .cursor-blink::after { content: "█"; animation: blink 1s step-start infinite; color: #3cd7ff; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+{% endblock %}
+
+{% block header %}
+<header class="fixed top-0 w-full bg-surface/60 backdrop-blur-3xl border-b border-white/10 z-50 flex justify-between items-center px-margin-mobile h-16">
+  <div class="flex items-center gap-3 cursor-pointer active:scale-95 transition-all" onclick="window.location.href='index.html'">
+    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">hub</span>
+    <h1 class="font-label-caps text-label-caps tracking-widest text-primary-fixed-dim">FUTURESHIELD AI</h1>
+  </div>
+  <div class="flex items-center gap-4">
+    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">settings</span>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="pt-24 px-margin-mobile max-w-container-max mx-auto space-y-gutter relative z-10">
+  <div class="mb-4">
+    <h1 class="font-headline-md text-headline-md text-primary mb-1">AI Rescue Center</h1>
+    <p class="text-on-surface-variant font-label-caps tracking-tight">AUTONOMOUS FAILURE MITIGATION DECK</p>
+  </div>
+
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter h-[calc(100vh-220px)] min-h-[550px]">
+    <!-- Left Pane -->
+    <div class="lg:col-span-5 flex flex-col gap-4 h-full">
+      <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between flex-grow h-1/2">
+        <div>
+          <h3 class="font-label-caps text-label-caps text-primary mb-4 uppercase tracking-widest flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">terminal</span>
+            AI Commander Log
+          </h3>
+          <p class="text-xs text-on-surface-variant mb-6 leading-relaxed">Mitigate active threats, realign operations, and generate critical deliverables to bypass friction.</p>
+          <div id="active-threats-status" class="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+            <div class="flex items-center gap-2 mb-2 text-xs font-label-caps text-on-surface-variant">
+              <span class="w-2 h-2 bg-error rounded-full animate-pulse"></span>
+              ACTIVE SYSTEM THREATS DETECTED
+            </div>
+            <div id="threats-skeleton" class="space-y-2">
+              <div class="skeleton skeleton-text" style="width: 90%;"></div>
+              <div class="skeleton skeleton-text" style="width: 75%;"></div>
+              <div class="skeleton skeleton-text" style="width: 60%;"></div>
+            </div>
+            <div id="threats-list" class="space-y-1 text-xs font-mono text-error hidden"></div>
+          </div>
+          <div id="action-steps" class="space-y-3 hidden">
+            <h4 class="font-label-caps text-[11px] text-tertiary mb-2 uppercase tracking-wide">RECOVERY VECTOR PLAN:</h4>
+          </div>
+        </div>
+        <button id="rescue-btn" onclick="initiateRescue()" class="w-full mt-6 py-4 bg-error text-white font-label-caps text-[12px] tracking-widest rounded-xl hover:bg-error-container hover:opacity-95 active:scale-[0.98] transition-all font-semibold flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,180,171,0.2)]">
+          INITIATE AUTONOMOUS RESCUE
+          <span class="material-symbols-outlined text-[16px]">bolt</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Pane: Code Editor -->
+    <div class="lg:col-span-7 flex flex-col h-full">
+      <div class="glass-panel rounded-2xl flex-grow flex flex-col overflow-hidden h-full border border-white/10">
+        <div class="bg-surface-container-low px-4 py-3 flex justify-between items-center border-b border-white/5">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-error opacity-70"></div>
+            <div class="w-3 h-3 rounded-full bg-secondary-container opacity-70"></div>
+            <div class="w-3 h-3 rounded-full bg-primary-container opacity-70"></div>
+            <span class="text-xs font-mono text-on-surface-variant ml-4 uppercase tracking-wider">Workspace: rescue_deliverable.py</span>
+          </div>
+          <div class="flex items-center gap-4 text-on-surface-variant text-[11px] font-mono">
+            <span class="bg-white/5 px-2 py-0.5 rounded border border-white/5">UTF-8</span>
+            <span>Python 3.11</span>
+          </div>
+        </div>
+        <div class="flex-grow flex font-mono text-xs overflow-auto code-editor p-4 bg-surface-container-lowest/40 relative">
+          <div class="absolute inset-0 pointer-events-none opacity-5" style="background-image: radial-gradient(circle, #3cd7ff 1px, transparent 1px); background-size: 24px 24px;"></div>
+          <div id="line-numbers" class="text-on-surface-variant/30 select-none pr-4 border-r border-white/5 text-right w-8">1</div>
+          <pre id="editor-content" class="flex-grow pl-4 text-primary-fixed-dim overflow-x-auto whitespace-pre-wrap select-text cursor-blink"></pre>
+        </div>
+        <div class="bg-surface-container-low px-4 py-2 border-t border-white/5 flex justify-between items-center text-[10px] font-mono text-on-surface-variant">
+          <div>Ln <span id="current-line">1</span>, Col <span id="current-col">1</span></div>
+          <div class="flex gap-4">
+            <span>Spaces: 4</span>
+            <span id="typing-status" class="text-primary">Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block js_extra %}
+<script>
+  const fetchThreats = async () => {
+    FutureShield.showSkeleton('threats-skeleton', true);
+    try {
+      const token = localStorage.getItem('shield_access_token') || '';
+      const response = await fetch('/api/threats', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!response.ok) { FutureShield.showSkeleton('threats-skeleton', false); return; }
+      const data = await response.json();
+      FutureShield.showSkeleton('threats-skeleton', false);
+      const list = document.getElementById('threats-list');
+      if (list) {
+        list.classList.remove('hidden');
+        if (data.threats.length === 0) {
+          list.innerHTML = '<div class="text-primary font-label-caps">ALL SYSTEMS NOMINAL. SHIELD IS COOLDOWN STATE.</div>';
+          const statusBadge = document.querySelector('#active-threats-status .flex');
+          if (statusBadge) { statusBadge.className = 'flex items-center gap-2 mb-2 text-xs font-label-caps text-primary'; statusBadge.innerHTML = '<span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span> ALL THREATS RESOLVED'; }
+        } else {
+          list.innerHTML = '';
+          data.threats.forEach(t => { const item = document.createElement('div'); item.innerText = `>> ${t.id}: [${t.urgency}] ${t.name} (risk: ${t.probability}%)`; list.appendChild(item); });
+        }
+      }
+    } catch (e) { console.error("Error fetching threats:", e); FutureShield.showSkeleton('threats-skeleton', false); }
+  };
+
+  const updateEditorState = () => {
+    const container = document.getElementById('editor-content');
+    const lineNumbers = document.getElementById('line-numbers');
+    const text = container.innerText;
+    const lines = text.split('\n');
+    let lineNums = '';
+    for (let i = 1; i <= Math.max(lines.length, 1); i++) { lineNums += `${i}\n`; }
+    lineNumbers.innerText = lineNums;
+    document.getElementById('current-line').innerText = lines.length;
+    document.getElementById('current-col').innerText = (lines[lines.length - 1] || '').length + 1;
+    const editorBody = container.parentElement;
+    editorBody.scrollTop = editorBody.scrollHeight;
+  };
+
+  const initiateRescue = async () => {
+    const btn = document.getElementById('rescue-btn');
+    btn.disabled = true;
+    btn.innerText = "STREAMING AI RESPONSE...";
+    btn.className = "w-full mt-6 py-4 bg-surface-container-high text-on-surface-variant font-label-caps text-[12px] tracking-widest rounded-xl cursor-not-allowed transition-all font-semibold flex items-center justify-center gap-2";
+    const container = document.getElementById('editor-content');
+    const lineNumbers = document.getElementById('line-numbers');
+    const typingStatus = document.getElementById('typing-status');
+    const actionSteps = document.getElementById('action-steps');
+    container.innerText = '';
+    container.className = "flex-grow pl-4 text-primary-fixed-dim overflow-x-auto whitespace-pre-wrap select-text cursor-blink";
+    lineNumbers.innerText = '1';
+    typingStatus.innerText = "Streaming...";
+    typingStatus.className = "text-error animate-pulse";
+    actionSteps.innerHTML = '<h4 class="font-label-caps text-[11px] text-tertiary mb-1 uppercase tracking-wide">RECOVERY VECTOR PLAN:</h4>';
+    actionSteps.classList.add('hidden');
+    const token = localStorage.getItem('shield_access_token') || '';
+    let streamFailed = false;
+    let fullCodeText = '';
+    const eventSource = new EventSource(`/api/rescue/stream?token=${encodeURIComponent(token)}`);
+    const streamTimeout = setTimeout(() => {
+      if (!streamFailed && container.innerText === '') { console.warn('[Rescue] SSE stream timed out, falling back to POST'); eventSource.close(); fallbackRescue(); }
+    }, 20000);
+    eventSource.addEventListener('plan_start', () => { actionSteps.classList.remove('hidden'); clearTimeout(streamTimeout); });
+    eventSource.addEventListener('plan_step', (e) => {
+      const data = JSON.parse(e.data);
+      const stepDiv = document.createElement('div');
+      stepDiv.className = 'flex gap-3 text-xs bg-white/5 border border-white/5 p-3 rounded-lg border-l-2 border-l-tertiary';
+      stepDiv.innerHTML = `<span class="text-tertiary font-mono">0${actionSteps.children.length}</span><p class="text-on-surface-variant leading-normal">${data.step}</p>`;
+      actionSteps.appendChild(stepDiv);
+      actionSteps.classList.remove('hidden');
+      clearTimeout(streamTimeout);
+    });
+    eventSource.addEventListener('code_chunk', (e) => {
+      const data = JSON.parse(e.data);
+      container.innerText += data.text;
+      fullCodeText += data.text;
+      updateEditorState();
+      clearTimeout(streamTimeout);
+    });
+    eventSource.addEventListener('complete', () => {
+      eventSource.close();
+      clearTimeout(streamTimeout);
+      container.className = "flex-grow pl-4 text-primary-fixed-dim overflow-x-auto whitespace-pre-wrap select-text";
+      typingStatus.innerText = "Active";
+      typingStatus.className = "text-primary";
+      btn.innerText = "MISSION RESOLVED";
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      if (window.FutureShield && window.FutureShield.showToast) { window.FutureShield.showToast("All threats resolved. Rescue mission complete.", "success", 5000); }
+      fetchThreats();
+    });
+    eventSource.addEventListener('error', (e) => {
+      if (container.innerText === '' && !streamFailed) { streamFailed = true; eventSource.close(); clearTimeout(streamTimeout); console.warn('[Rescue] SSE error, falling back to POST'); fallbackRescue(); }
+    });
+  };
+
+  const fallbackRescue = async () => {
+    const btn = document.getElementById('rescue-btn');
+    const container = document.getElementById('editor-content');
+    const typingStatus = document.getElementById('typing-status');
+    container.innerText = ">> Connecting to core AI clusters...\n>> Analyzing database threat indices...\n>> Requesting autonomous response code from Gemini...";
+    typingStatus.innerText = "Fallback mode...";
+    try {
+      const response = await fetch('/api/rescue', { method: 'POST' });
+      if (!response.ok) throw new Error("Failed to call rescue API");
+      const data = await response.json();
+      const actionSteps = document.getElementById('action-steps');
+      actionSteps.innerHTML = '<h4 class="font-label-caps text-[11px] text-tertiary mb-2 uppercase tracking-wide">RECOVERY VECTOR PLAN:</h4>';
+      data.action_plan.forEach((step, idx) => {
+        const stepDiv = document.createElement('div');
+        stepDiv.className = 'flex gap-3 text-xs bg-white/5 border border-white/5 p-3 rounded-lg border-l-2 border-l-tertiary';
+        stepDiv.innerHTML = `<span class="text-tertiary font-mono">0${idx+1}</span><p class="text-on-surface-variant leading-normal">${step}</p>`;
+        actionSteps.appendChild(stepDiv);
+      });
+      actionSteps.classList.remove('hidden');
+      container.innerText = '';
+      typingStatus.innerText = "Mitigating...";
+      typingStatus.className = "text-error animate-pulse";
+      let index = 0;
+      const speed = 10;
+      const typeChar = () => {
+        if (index < data.generated_asset.length) { container.innerText += data.generated_asset.charAt(index); index++; updateEditorState(); setTimeout(typeChar, speed); }
+        else { container.className = "flex-grow pl-4 text-primary-fixed-dim overflow-x-auto whitespace-pre-wrap select-text"; typingStatus.innerText = "Active"; typingStatus.className = "text-primary"; confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); fetchThreats(); }
+      };
+      typeChar();
+    } catch (e) {
+      console.error("Rescue failed:", e);
+      container.innerText = ">> CRITICAL ERROR: Rescue execution failed.\n>> Reason: " + e.message;
+      if (window.FutureShield && window.FutureShield.showToast) { window.FutureShield.showToast("Rescue mission failed: " + e.message, "error", 6000); }
+    } finally { btn.innerText = "MISSION RESOLVED"; }
+  };
+
+  fetchThreats();
+</script>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% set active_page = 'simulation' %}
+{% block title %}Future Simulation Lab | FutureShield AI{% endblock %}
+{% block body_class %} pb-32{% endblock %}
+
+{% block header %}
+<header class="fixed top-0 w-full bg-surface/60 backdrop-blur-3xl border-b border-white/10 z-50 flex justify-between items-center px-margin-mobile h-16">
+  <div class="flex items-center gap-3 cursor-pointer active:scale-95 transition-all" onclick="window.location.href='index.html'">
+    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">hub</span>
+    <h1 class="font-label-caps text-label-caps tracking-widest text-primary-fixed-dim">FUTURESHIELD AI</h1>
+  </div>
+  <div class="flex items-center gap-4">
+    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">settings</span>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="pt-24 px-margin-mobile max-w-container-max mx-auto space-y-gutter relative z-10 pb-32">
+  <div class="mb-8">
+    <h1 class="font-headline-md text-headline-md text-primary mb-1">Future Simulation Lab</h1>
+    <p class="text-on-surface-variant font-label-caps tracking-tight">MONTE CARLO PROBABILITY ENGINE</p>
+  </div>
+
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+    <!-- Left Panel: Scenario Inputs -->
+    <div class="lg:col-span-5 flex flex-col gap-gutter">
+      <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+        <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 uppercase tracking-widest">Simulate Future Action</h3>
+        <p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Input a prospective decision (e.g. delaying a project or skipping today's deep work block) to run Monte Carlo probability trees against target deadlines.</p>
+        <div class="space-y-4">
+          <textarea id="scenario-input" rows="3" class="w-full bg-surface-container-lowest/50 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-primary/50 placeholder:text-on-surface-variant/50" placeholder="Type a scenario... e.g. Skip today's project work block"></textarea>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setScenario('Skip today\\'s work block')" class="bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 rounded-lg text-[11px] font-label-caps text-on-surface-variant">Skip Today</button>
+            <button onclick="setScenario('Delay project Phoenix deadline by 3 days')" class="bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 rounded-lg text-[11px] font-label-caps text-on-surface-variant">Delay 3 Days</button>
+            <button onclick="setScenario('Conduct focus deep work tonight')" class="bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 rounded-lg text-[11px] font-label-caps text-on-surface-variant">Conduct Focus</button>
+          </div>
+        </div>
+        <button onclick="runSimulation()" id="simulate-btn" class="w-full mt-6 py-4 bg-primary text-on-primary font-label-caps text-[12px] tracking-widest rounded-xl hover:opacity-95 active:scale-[0.98] transition-all font-semibold flex items-center justify-center gap-2">
+          RUN SIMULATION ENGINE
+          <span class="material-symbols-outlined text-[16px]">play_circle</span>
+        </button>
+      </div>
+
+      <div class="glass-panel p-6 rounded-2xl">
+        <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-6 uppercase tracking-widest">Simulation Metrics</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-xl relative">
+            <svg class="w-24 h-24 transform -rotate-90">
+              <circle class="text-white/5" cx="50%" cy="50%" fill="transparent" r="40%" stroke="currentColor" stroke-width="2"></circle>
+              <circle id="success-ring" class="text-primary-fixed-dim drop-shadow-[0_0_8px_rgba(60,215,255,0.6)]" cx="50%" cy="50%" fill="transparent" r="40%" stroke="currentColor" stroke-dasharray="251" stroke-dashoffset="20" stroke-linecap="round" stroke-width="6"></circle>
+            </svg>
+            <div class="absolute flex flex-col items-center">
+              <span id="success-pct" class="font-metric-xl text-2xl text-white font-bold">92%</span>
+              <span class="font-label-caps text-[9px] text-primary">SUCCESS</span>
+            </div>
+          </div>
+          <div class="flex flex-col justify-between p-4 bg-white/5 border border-white/10 rounded-xl">
+            <div>
+              <span class="block text-[10px] font-label-caps text-on-surface-variant uppercase mb-1">Stress Index</span>
+              <span id="stress-index" class="text-2xl font-bold text-white">25%</span>
+            </div>
+            <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3"><div id="stress-bar" class="bg-secondary h-full w-1/4"></div></div>
+          </div>
+          <div class="col-span-2 p-4 bg-white/5 border border-white/10 rounded-xl flex justify-between items-center">
+            <div>
+              <span class="block text-[10px] font-label-caps text-on-surface-variant uppercase">Deadline Risk</span>
+              <span id="deadline-risk" class="text-lg font-bold text-primary-fixed-dim">LOW</span>
+            </div>
+            <span class="material-symbols-outlined text-primary-fixed-dim text-3xl">verified_user</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Branching Futures -->
+    <div class="lg:col-span-7 flex flex-col gap-6">
+      <div class="glass-panel p-6 rounded-2xl flex-1">
+        <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-6 uppercase tracking-widest">Branching Timelines</h3>
+        <div id="futures-container" class="space-y-4">
+          <div class="p-5 border border-white/10 bg-white/5 rounded-2xl transition-all">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-label-caps text-[10px] text-primary-fixed-dim px-2 py-0.5 border border-primary/20 rounded bg-primary/5">FUTURE A (CURRENT PATH)</span>
+              <span class="text-[10px] text-on-surface-variant">NOMINAL</span>
+            </div>
+            <h4 class="font-headline-md text-[18px] text-white mb-2">Maintain current behavioral trend</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Expected deadlines hold status. Focus intervals align with prime circadian hours.</p>
+          </div>
+          <div class="p-5 border border-white/10 bg-white/5 rounded-2xl transition-all">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-label-caps text-[10px] text-tertiary-fixed-dim px-2 py-0.5 border border-tertiary/20 rounded bg-tertiary/5">FUTURE B (RECOMMENDED ACTION)</span>
+              <span class="text-[10px] text-on-surface-variant">OPTIMIZED</span>
+            </div>
+            <h4 class="font-headline-md text-[18px] text-white mb-2">Shift work hours to peak cognitive states</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Reallocate timeline priorities. 14% productivity increase expected based on Digital Twin Success DNA.</p>
+          </div>
+          <div onclick="window.location.href='rescue.html'" class="p-5 border border-white/10 bg-white/5 rounded-2xl hover:border-error/20 hover:bg-error/5 cursor-pointer transition-all">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-label-caps text-[10px] text-on-secondary-container px-2 py-0.5 border border-secondary/20 rounded bg-secondary/5">FUTURE C (WORST-CASE SCENARIO)</span>
+              <span class="text-[10px] text-on-surface-variant">AI RESCUE OPTION</span>
+            </div>
+            <h4 class="font-headline-md text-[18px] text-white mb-2">Delegate to Autonomous Co-Pilot</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed mb-4">Automatic code and report generation triggers to prevent imminent milestone collapse.</p>
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-label-caps text-error bg-error/10 border border-error/20 px-3 py-1 rounded-full uppercase tracking-wider">
+              <span class="material-symbols-outlined text-[12px] animate-pulse">bolt</span>
+              OPEN RESCUE DECK
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block js_extra %}
+<script>
+  const setScenario = (text) => { document.getElementById('scenario-input').value = text; };
+
+  const runSimulation = async () => {
+    const scenario = document.getElementById('scenario-input').value;
+    if (!scenario) return;
+    const runBtn = document.getElementById('simulate-btn');
+    if (runBtn) {
+      runBtn.classList.add('btn-loading');
+      runBtn.disabled = true;
+      runBtn.innerHTML = '<span>ANALYZING...</span>';
+    }
+    try {
+      const response = await fetch('/api/simulate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: scenario }) });
+      if (!response.ok) throw new Error('Simulation failed');
+      const data = await response.json();
+      const successPct = document.getElementById('success-pct');
+      if (successPct) successPct.innerText = `${data.future_a.success_probability}%`;
+      const successRing = document.getElementById('success-ring');
+      if (successRing) successRing.style.strokeDashoffset = 251 - (251 * data.future_a.success_probability) / 100;
+      const stressIndexVal = document.getElementById('stress-index');
+      if (stressIndexVal) stressIndexVal.innerText = `${data.future_a.stress_index}%`;
+      const stressBar = document.getElementById('stress-bar');
+      if (stressBar) stressBar.style.width = `${data.future_a.stress_index}%`;
+      const deadlineRiskVal = document.getElementById('deadline-risk');
+      if (deadlineRiskVal) {
+        deadlineRiskVal.innerText = data.future_a.deadline_risk;
+        if (data.future_a.deadline_risk === 'HIGH') deadlineRiskVal.className = 'text-lg font-bold text-error';
+        else if (data.future_a.deadline_risk === 'MEDIUM') deadlineRiskVal.className = 'text-lg font-bold text-secondary';
+        else deadlineRiskVal.className = 'text-lg font-bold text-primary-fixed-dim';
+      }
+      const container = document.getElementById('futures-container');
+      if (container) {
+        container.innerHTML = `
+          <div class="p-5 border border-white/10 bg-white/5 rounded-2xl hover:border-primary/20 transition-all">
+            <div class="flex justify-between items-center mb-2"><span class="font-label-caps text-[10px] text-primary-fixed-dim px-2 py-0.5 border border-primary/20 rounded bg-primary/5">FUTURE A (CURRENT PATH)</span><span class="text-[10px] text-on-surface-variant">${data.future_a.deadline_risk} RISK</span></div>
+            <h4 class="font-headline-md text-[18px] text-white mb-2">Decision Result: ${data.future_a.status}</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Temporal projection predicts a success probability of ${data.future_a.success_probability}% and failure risk of ${data.future_a.failure_probability}%.</p>
+          </div>
+          <div class="p-5 border border-white/10 bg-white/5 rounded-2xl hover:border-secondary/20 transition-all">
+            <div class="flex justify-between items-center mb-2"><span class="font-label-caps text-[10px] text-tertiary-fixed-dim px-2 py-0.5 border border-tertiary/20 rounded bg-tertiary/5">FUTURE B (RECOMMENDED ACTION)</span><span class="text-[10px] text-on-surface-variant">${data.future_b.deadline_risk} RISK</span></div>
+            <h4 class="font-headline-md text-[18px] text-white mb-2">Alternative Path: ${data.future_b.status}</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Optimal alternative path holds a stress index of ${data.future_b.stress_index}% with a high success projection of ${data.future_b.success_probability}%.</p>
+          </div>
+          <div onclick="window.location.href='rescue.html'" class="p-5 border border-white/10 bg-white/5 rounded-2xl hover:border-error/20 hover:bg-error/5 cursor-pointer transition-all text-left">
+            <div class="flex justify-between items-center mb-2"><span class="font-label-caps text-[10px] text-on-secondary-container px-2 py-0.5 border border-secondary/20 rounded bg-secondary/5">FUTURE C (WORST-CASE SCENARIO)</span><span class="text-[10px] text-on-surface-variant">${data.future_c.deadline_risk} RISK</span></div>
+            <h4 class="font-headline-md text-[18px] text-white mb-2">Active Intervention: ${data.future_c.status}</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed mb-4">If failure threshold is triggered, the AI Co-pilot automates schedule rescue to recover a ${data.future_c.success_probability}% safety index.</p>
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-label-caps text-error bg-error/10 border border-error/20 px-3 py-1 rounded-full uppercase tracking-wider"><span class="material-symbols-outlined text-[12px] animate-pulse">bolt</span> ACTIVATE AI RESCUE VECTOR</span>
+          </div>`;
+      }
+    } catch (error) {
+      console.error("Error executing simulation:", error);
+      if (window.FutureShield && window.FutureShield.showToast) { window.FutureShield.showToast("Simulation failed. Using data-driven fallback.", "error"); }
+    } finally {
+      if (runBtn) { runBtn.classList.remove('btn-loading'); runBtn.disabled = false; runBtn.innerHTML = 'RUN SIMULATION ENGINE <span class="material-symbols-outlined text-[16px]">play_circle</span>'; }
+    }
+  };
+
+
+</script>
+{% endblock %}

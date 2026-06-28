@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>{% block title %}FutureShield AI{% endblock %}</title>
+  <link href="shared/tailwind.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@500&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml"/>
+  <link rel="apple-touch-icon" href="/icon.svg"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="theme-color" content="#111417"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <link rel="stylesheet" href="shared/style.css"/>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen{% block body_class %}{% endblock %}">
+  {% block header %}{% endblock %}
+
+  {% block content %}{% endblock %}
+
+  {% block bottom_nav %}
+  <nav class="fixed bottom-8 w-full flex justify-center z-50 px-margin-mobile">
+    <div class="bg-surface-container-low/40 backdrop-blur-2xl border border-white/5 shadow-[0_0_20px_rgba(60,215,255,0.15)] w-[90%] md:max-w-lg rounded-full flex justify-around items-center h-16 px-6">
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'dashboard' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="dashboard.html">
+        <span class="material-symbols-outlined{% if active_page == 'dashboard' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">dashboard</span>
+      </a>
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'simulation' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="simulation.html">
+        <span class="material-symbols-outlined{% if active_page == 'simulation' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">assignment_late</span>
+      </a>
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'radar' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="radar.html">
+        <span class="material-symbols-outlined{% if active_page == 'radar' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">radar</span>
+      </a>
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'twin' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="twin.html">
+        <span class="material-symbols-outlined{% if active_page == 'twin' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">psychology</span>
+      </a>
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'rag' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="rag.html">
+        <span class="material-symbols-outlined{% if active_page == 'rag' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">folder_open</span>
+      </a>
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'rescue' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="rescue.html">
+        <span class="material-symbols-outlined{% if active_page == 'rescue' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">medical_services</span>
+      </a>
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'timeline' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="timeline.html">
+        <span class="material-symbols-outlined{% if active_page == 'timeline' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">timeline</span>
+      </a>
+      <a class="flex items-center justify-center p-2 md:p-3 hover:text-tertiary-fixed-dim transition-all duration-300 active:scale-90 {% if active_page == 'analytics' %}bg-primary-container/20 text-primary-fixed-dim rounded-full shadow-[inset_0_0_8px_rgba(60,215,255,0.4)]{% else %}text-outline-variant{% endif %}" href="analytics.html">
+        <span class="material-symbols-outlined{% if active_page == 'analytics' %}" style="font-variation-settings: 'FILL' 1;{% endif %}">insights</span>
+      </a>
+    </div>
+  </nav>
+  {% endblock %}
+
+  {% block footer %}{% endblock %}
+
+  <!-- WebGL Background Shader -->
+  <div class="fixed inset-0 w-full h-full pointer-events-none z-[-1]" style="display:block;">
+    <canvas id="shader-canvas-ANIMATION_2" style="display:block;width:100%;height:100%"></canvas>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').then(function (reg) {
+          console.log('[PWA] SW registered:', reg.scope);
+        }).catch(function (err) {
+          console.warn('[PWA] SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+
+  {% if config.get('USE_VITE_BUNDLE', false) %}
+  <!-- Vite production bundle (built from shared/*.js) -->
+  <script src="/dist/assets/fs-shared.js"></script>
+  <script src="/dist/assets/auth.js"></script>
+  <script src="/dist/assets/ui.js"></script>
+  <script src="/dist/assets/demo.js"></script>
+  <script src="/dist/assets/voice-assistant.js"></script>
+  <script src="/dist/assets/focus-timer.js"></script>
+  {% else %}
+  <!-- Development mode: direct source files -->
+  <script src="shared/fs-shared.js"></script>
+  <script src="shared/auth.js"></script>
+  <script src="shared/ui.js"></script>
+  <script src="shared/demo.js"></script>
+  <script src="shared/voice-assistant.js"></script>
+  <script src="shared/focus-timer.js"></script>
+  {% endif %}
+
+  {% block js_extra %}{% endblock %}
+</body>
+</html>

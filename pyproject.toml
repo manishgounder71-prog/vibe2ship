@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "futureshield-ai"
+version = "1.0.0"
+description = "FutureShield AI — Failure Prevention Operating System"
+requires-python = ">=3.11"
+
+[tool.mypy]
+python_version = "3.11"
+
+# ─── Strict mode ──────────────────────────────────────────────────
+strict = true
+
+# ─── Core safety flags ────────────────────────────────────────────
+no_implicit_optional = true
+strict_equality = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unused_configs = true
+warn_unreachable = true
+
+# ─── Third-party stubs (allow missing stubs for some packages) ────
+ignore_missing_imports = false
+[[tool.mypy.overrides]]
+module = [
+    "psycopg2.*",
+    "passlib.*",
+    "bcrypt.*",
+    "jose.*",
+    "chromadb.*",
+    "httpx.*",
+    "playwright.*",
+]
+ignore_missing_imports = true
+
+# ─── Force explicit type annotations everywhere ──────────────────
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
+
+# ─── Tests override ───────────────────────────────────────────────
+[[tool.mypy.overrides]]
+module = "tests.*"
+check_untyped_defs = false
+warn_unreachable = false
+warn_return_any = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+# ─── Routes override (already strict) ─────────────────────────────
+[[tool.mypy.overrides]]
+module = "routes.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

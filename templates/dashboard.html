@@ -1,0 +1,716 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+{% block title %}FutureShield AI | Executive Command Center{% endblock %}
+{% block body_class %} pb-32{% endblock %}
+
+{% block header %}
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-3xl border-b border-white/10 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16">
+  <div class="flex items-center gap-3 cursor-pointer active:scale-95 transition-transform" onclick="window.location.href='index.html'">
+    <span class="material-symbols-outlined text-primary text-headline-md">hub</span>
+    <span class="font-label-caps text-label-caps tracking-widest text-primary-fixed-dim">FUTURESHIELD AI</span>
+  </div>
+  <div class="hidden md:flex items-center gap-8">
+    <nav class="flex gap-6 font-label-caps text-label-caps">
+      <a class="text-primary hover:text-primary transition-colors" href="dashboard.html">DASHBOARD</a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors" href="radar.html">STRATEGY</a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors" href="twin.html">INTELLIGENCE</a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors" href="rescue.html">RESCUE</a>
+    </nav>
+  </div>
+  <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2">
+      <span id="last-backup-label" class="hidden font-label-caps text-[9px] text-on-surface-variant/60 whitespace-nowrap"></span>
+      <span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-all hover:text-primary" onclick="downloadBackup()" title="Export all data as JSON">download</span>
+    </div>
+    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-all hover:text-primary" onclick="document.getElementById('backup-file-input').click()" title="Restore data from a JSON backup">upload</span>
+    <input type="file" id="backup-file-input" accept=".json,application/json" style="display:none" onchange="uploadBackup(this)" />
+    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-all hover:text-primary">settings</span>
+    <div class="w-8 h-8 rounded-full border border-primary/20 overflow-hidden">
+      <img class="w-full h-full object-cover" data-alt="Futuristic Executive Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAErM_1f4pmLonkw5GKGRatzmEyGJjNdbGFHn3BJFZalgSM0xuPe6O4l_WUfHVPo8aKGIAvd4BIzIjZ1SQQ3ho91u1Q12qQ6yCWT2uogooNeKd4pNuhZ2mTkrNz_u1kHDWBpqdMi2bCpZIp8wnH0H8rk7b2d7tPPS74NoZTymzIPErJvpCEh0cJbGQ86npJ5rKdjfdbyTu222AoAZnLNY0Rae7WJMWvOYhB28_jW32GAaWJaXtFJ4aL"/>
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto relative">
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+    <!-- Left Panel -->
+    <div class="lg:col-span-5 flex flex-col gap-gutter">
+      <!-- Success Score Hero Card Skeleton -->
+      <div id="status-skeleton" class="rounded-xl p-8 flex flex-col items-center justify-center">
+        <div class="skeleton skeleton-text-lg" style="width: 60%; margin: 0 auto 24px;"></div>
+        <div class="skeleton skeleton-circle" style="width: 180px; height: 180px; margin: 0 auto 24px;"></div>
+        <div class="flex gap-4 w-full justify-center">
+          <div class="text-center">
+            <div class="skeleton skeleton-text" style="width: 60px; margin: 0 auto 8px;"></div>
+            <div class="skeleton skeleton-text-lg" style="width: 40px; margin: 0 auto;"></div>
+          </div>
+          <div class="text-center">
+            <div class="skeleton skeleton-text" style="width: 60px; margin: 0 auto 8px;"></div>
+            <div class="skeleton skeleton-text-lg" style="width: 40px; margin: 0 auto;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Score Hero Card -->
+      <div id="status-content" class="gradient-border p-8 rounded-xl flex flex-col items-center justify-center relative overflow-hidden hidden">
+        <div class="absolute inset-0 scanline pointer-events-none opacity-30"></div>
+        <h3 class="font-label-caps text-label-caps text-primary/60 mb-6 uppercase tracking-widest">Global Efficiency Rating</h3>
+        <div class="relative w-48 h-48 md:w-64 md:h-64 flex items-center justify-center">
+          <div class="absolute inset-0 border-2 border-primary/10 rounded-full radar-pulse"></div>
+          <div class="absolute inset-4 border-2 border-primary/20 rounded-full radar-pulse" style="animation-delay: 1s"></div>
+          <svg class="w-full h-full transform -rotate-90">
+            <circle class="text-white/5" cx="50%" cy="50%" fill="transparent" r="45%" stroke="currentColor" stroke-width="2"></circle>
+            <circle class="text-primary-fixed-dim drop-shadow-[0_0_10px_rgba(60,215,255,0.8)]" cx="50%" cy="50%" fill="transparent" r="45%" stroke="currentColor" stroke-dasharray="283" stroke-dashoffset="22" stroke-linecap="round" stroke-width="8"></circle>
+          </svg>
+          <div class="absolute flex flex-col items-center">
+            <span id="global-success-score" class="font-metric-xl text-[64px] md:text-[80px] leading-none text-white font-bold">92%</span>
+            <span class="font-label-caps text-label-caps text-primary animate-pulse">OPTIMIZED</span>
+          </div>
+        </div>
+        <div class="mt-8 grid grid-cols-2 gap-4 w-full">
+          <div class="text-center">
+            <p class="font-label-caps text-[10px] text-on-surface-variant mb-1">DATA NODES</p>
+            <p id="data-nodes-val" class="font-metric-xl text-headline-md text-white">4.2k</p>
+          </div>
+          <div class="text-center border-l border-white/10">
+            <p class="font-label-caps text-[10px] text-on-surface-variant mb-1">LATENCY</p>
+            <p id="latency-val" class="font-metric-xl text-headline-md text-primary">14ms</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics Grid Skeleton -->
+      <div id="metrics-skeleton" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%;"></div><div class="skeleton skeleton-bar" style="width: 80%;"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%;"></div><div class="skeleton skeleton-bar" style="width: 60%;"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%;"></div><div class="skeleton skeleton-bar" style="width: 30%;"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%;"></div><div class="skeleton skeleton-bar" style="width: 70%;"></div></div>
+      </div>
+
+      <!-- Metrics Grid -->
+      <div id="metrics-content" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+        <div class="glass-card p-5 rounded-xl border-l-4 border-l-primary-container">
+          <div class="flex justify-between items-start mb-3">
+            <span class="font-label-caps text-[10px] text-on-surface-variant">SUCCESS PROBABILITY</span>
+            <span class="material-symbols-outlined text-primary text-sm">trending_up</span>
+          </div>
+          <div class="font-headline-md text-white mb-2">88.4%</div>
+          <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-primary h-full w-[88%] shadow-[0_0_10px_rgba(60,215,255,0.5)]"></div>
+          </div>
+        </div>
+        <div class="glass-card p-5 rounded-xl border-l-4 border-l-error">
+          <div class="flex justify-between items-start mb-3">
+            <span class="font-label-caps text-[10px] text-on-surface-variant">BURNOUT RISK</span>
+            <span class="material-symbols-outlined text-error text-sm">warning</span>
+          </div>
+          <div class="font-headline-md text-white mb-2">CRITICAL</div>
+          <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-error h-full w-[72%] shadow-[0_0_10px_rgba(255,180,171,0.5)]"></div>
+          </div>
+        </div>
+        <div class="glass-card p-5 rounded-xl">
+          <div class="flex justify-between items-start mb-3">
+            <span class="font-label-caps text-[10px] text-on-surface-variant">DEADLINE RISK</span>
+            <span class="material-symbols-outlined text-secondary-fixed-dim text-sm">schedule</span>
+          </div>
+          <div class="font-headline-md text-white mb-2">NOMINAL</div>
+          <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-secondary-container h-full w-[14%]"></div>
+          </div>
+        </div>
+        <div class="glass-card p-5 rounded-xl">
+          <div class="flex justify-between items-start mb-3">
+            <span class="font-label-caps text-[10px] text-on-surface-variant">FOCUS QUALITY</span>
+            <span class="material-symbols-outlined text-tertiary text-sm">psychology</span>
+          </div>
+          <div class="font-headline-md text-white mb-2">FLOW</div>
+          <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-tertiary h-full w-[94%]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="lg:col-span-7">
+      <div class="glass-card h-full rounded-xl p-8 relative overflow-hidden flex flex-col items-center">
+        <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center border-b border-white/5">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            <span class="font-label-caps text-[11px] text-primary">LIVE RADAR FEED [SECURE_ENCRYPTION_ON]</span>
+          </div>
+          <span id="azimuth-display" class="font-label-caps text-[10px] text-on-surface-variant">AZIMUTH: 284.2</span>
+        </div>
+        <div class="flex-grow flex items-center justify-center w-full mt-12 relative">
+          <div class="relative w-[320px] h-[320px] md:w-[480px] md:h-[480px] rounded-full border border-white/10 p-4">
+            <div class="absolute inset-0 rounded-full border border-white/5 scale-[0.75]"></div>
+            <div class="absolute inset-0 rounded-full border border-white/5 scale-[0.5]"></div>
+            <div class="absolute inset-0 rounded-full border border-white/5 scale-[0.25]"></div>
+            <div class="absolute left-1/2 top-0 h-full w-[1px] bg-white/5 -translate-x-1/2"></div>
+            <div class="absolute top-1/2 left-0 w-full h-[1px] bg-white/5 -translate-y-1/2"></div>
+            <div class="absolute inset-0 rounded-full radar-sweep"></div>
+            <div class="absolute top-[20%] left-[30%] group cursor-pointer" onclick="window.location.href='radar.html'">
+              <div class="w-3 h-3 bg-primary rounded-sm shadow-[0_0_8px_#3cd7ff]"></div>
+              <div class="absolute left-4 top-0 glass-card px-2 py-1 rounded text-[10px] font-label-caps opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">PROJECT: NEURAL_DRIVE</div>
+            </div>
+            <div class="absolute top-[60%] left-[75%] group cursor-pointer" onclick="window.location.href='twin.html'">
+              <div class="w-3 h-3 bg-secondary rounded-full shadow-[0_0_8px_#d0bcff]"></div>
+              <div class="absolute left-4 top-0 glass-card px-2 py-1 rounded text-[10px] font-label-caps opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">GOAL: MARKET_EXPANSION</div>
+            </div>
+            <div class="absolute bottom-[25%] left-[20%] group cursor-pointer" onclick="window.location.href='radar.html'">
+              <div class="w-3 h-3 bg-tertiary rounded-sm shadow-[0_0_8px_#93ecff]"></div>
+              <div class="absolute left-4 top-0 glass-card px-2 py-1 rounded text-[10px] font-label-caps opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">PROJECT: STEALTH_OPS</div>
+            </div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white/10 rounded-full flex items-center justify-center">
+              <div class="w-1.5 h-1.5 bg-primary rounded-full animate-ping"></div>
+            </div>
+          </div>
+          <div class="hidden xl:flex absolute right-0 top-1/2 -translate-y-1/2 flex-col gap-6">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 bg-primary rounded-sm"></div>
+              <div><p class="font-label-caps text-[10px] leading-none text-white">ACTIVE PROJECTS</p><p class="font-label-caps text-[9px] text-on-surface-variant">12 DETECTED</p></div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 bg-secondary rounded-full"></div>
+              <div><p class="font-label-caps text-[10px] leading-none text-white">STRATEGIC GOALS</p><p class="font-label-caps text-[9px] text-on-surface-variant">04 ON TRACK</p></div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 border border-error rounded-sm"></div>
+              <div><p class="font-label-caps text-[10px] leading-none text-white">ANOMALIES</p><p class="font-label-caps text-[9px] text-error">02 REQUIRING ATTENTION</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="w-full mt-8 grid grid-cols-3 gap-2">
+          <button class="bg-primary/10 border border-primary/20 py-2 rounded font-label-caps text-[11px] text-primary hover:bg-primary/20 transition-all uppercase" onclick="window.location.href='radar.html'">Re-Scan Grid</button>
+          <button class="bg-white/5 border border-white/10 py-2 rounded font-label-caps text-[11px] text-white hover:bg-white/10 transition-all uppercase">Filter Tags</button>
+          <button class="bg-white/5 border border-white/10 py-2 rounded font-label-caps text-[11px] text-white hover:bg-white/10 transition-all uppercase" onclick="window.location.reload()">Sync Intel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI Smart Summary -->
+  <section class="mt-gutter">
+    <div class="glass-card p-6 rounded-xl relative overflow-hidden">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="material-symbols-outlined text-primary-fixed-dim">summarize</span>
+        <h4 class="font-headline-md text-white text-lg">AI Smart Summary</h4>
+        <span class="ml-auto flex items-center gap-3">
+          <select id="summary-period" class="bg-surface-container-lowest/50 border border-white/10 rounded-lg px-3 py-1.5 text-[11px] font-label-caps text-on-surface-variant focus:outline-none focus:border-primary/50">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+          <button onclick="generateSummary()" id="summary-btn" class="bg-primary/10 border border-primary/20 py-1.5 px-4 rounded-lg font-label-caps text-[11px] text-primary hover:bg-primary/20 transition-all active:scale-95 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+            GENERATE AI SUMMARY
+          </button>
+        </span>
+      </div>
+      <div id="summary-loading" class="hidden">
+        <div class="flex items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-xl">
+          <div class="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div class="space-y-2 flex-1">
+            <div class="h-3 bg-white/10 rounded animate-pulse w-3/4"></div>
+            <div class="h-3 bg-white/10 rounded animate-pulse w-1/2"></div>
+            <div class="h-3 bg-white/10 rounded animate-pulse w-2/3"></div>
+          </div>
+        </div>
+      </div>
+      <div id="summary-skeleton" class="hidden">
+        <div class="gradient-border p-5 rounded-xl flex items-center gap-6">
+          <div class="skeleton skeleton-circle" style="width: 80px; height: 80px; flex-shrink: 0;"></div>
+          <div class="flex-1"><div class="skeleton skeleton-text" style="width: 90%;"></div><div class="skeleton skeleton-text" style="width: 70%;"></div><div class="skeleton skeleton-text-sm" style="width: 40%;"></div></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 60%;"></div><div class="skeleton skeleton-text" style="width: 90%;"></div><div class="skeleton skeleton-text" style="width: 50%;"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 60%;"></div><div class="skeleton skeleton-text" style="width: 80%;"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 60%;"></div><div class="skeleton skeleton-text" style="width: 85%;"></div></div>
+        </div>
+      </div>
+      <div id="summary-content" class="hidden space-y-6">
+        <div id="summary-banner" class="gradient-border p-5 rounded-xl flex items-center gap-6">
+          <div class="w-20 h-20 flex-shrink-0 relative">
+            <svg class="w-full h-full transform -rotate-90">
+              <circle class="text-white/5" cx="50%" cy="50%" fill="transparent" r="42%" stroke="currentColor" stroke-width="3"></circle>
+              <circle id="summary-score-ring" class="text-primary-fixed-dim drop-shadow-[0_0_8px_rgba(60,215,255,0.6)]" cx="50%" cy="50%" fill="transparent" r="42%" stroke="currentColor" stroke-dasharray="264" stroke-dashoffset="50" stroke-linecap="round" stroke-width="6"></circle>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <span id="summary-score" class="font-metric-xl text-2xl text-white font-bold">--</span>
+            </div>
+          </div>
+          <div class="flex-1">
+            <p id="summary-assessment" class="text-sm text-on-surface-variant leading-relaxed"></p>
+            <p id="summary-period-label" class="font-label-caps text-[9px] text-primary mt-2 uppercase tracking-widest"></p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white/5 border border-white/10 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-outlined text-primary text-sm">insights</span>
+              <span class="font-label-caps text-[9px] text-on-surface-variant uppercase tracking-widest">Key Insights</span>
+            </div>
+            <ul id="summary-insights" class="space-y-2"></ul>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-outlined text-secondary text-sm">priority_high</span>
+              <span class="font-label-caps text-[9px] text-on-surface-variant uppercase tracking-widest">Top Priority</span>
+            </div>
+            <p id="summary-priority" class="text-xs text-on-surface-variant leading-relaxed"></p>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-outlined text-error text-sm">warning</span>
+              <span class="font-label-caps text-[9px] text-on-surface-variant uppercase tracking-widest">Risk Warning</span>
+            </div>
+            <p id="summary-risk" class="text-xs text-on-surface-variant leading-relaxed"></p>
+          </div>
+        </div>
+        <div id="summary-energy" class="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
+          <span class="material-symbols-outlined text-tertiary">bolt</span>
+          <p id="summary-energy-text" class="text-xs text-on-surface-variant leading-relaxed flex-1"></p>
+        </div>
+      </div>
+      <div id="summary-error" class="hidden p-6 bg-error-container/10 border border-error/20 rounded-xl">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-error">error_outline</span>
+          <p id="summary-error-text" class="text-xs text-error leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Knowledge Graph -->
+  <section class="mt-gutter">
+    <div class="glass-card p-6 rounded-xl">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-outlined text-primary-fixed-dim">hub</span>
+        <h4 class="font-headline-md text-white text-lg">Knowledge & Dependency Graph</h4>
+        <span class="ml-auto text-[10px] font-label-caps text-on-surface-variant">Drag nodes · Scroll to zoom</span>
+      </div>
+      <div id="knowledge-graph" style="width:100%;height:400px;border-radius:12px;overflow:hidden;"></div>
+    </div>
+  </section>
+
+  <!-- AI Calendar -->
+  <section class="mt-gutter">
+    <div class="glass-card p-6 rounded-xl">
+      <div id="ai-calendar" style="width:100%;"></div>
+    </div>
+  </section>
+
+  <!-- Secondary Intelligence Grid -->
+  <section class="mt-gutter grid grid-cols-1 md:grid-cols-3 gap-gutter">
+    <div class="glass-card p-6 rounded-xl relative overflow-hidden group">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-outlined text-primary-fixed-dim">query_stats</span>
+        <h4 class="font-headline-md text-white text-lg">System Telemetry</h4>
+      </div>
+      <div class="space-y-4">
+        <div class="flex justify-between text-[11px] font-label-caps">
+          <span class="text-on-surface-variant">CORE LOAD</span>
+          <span id="core-load-val" class="text-white">24%</span>
+        </div>
+        <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+          <div id="core-load-bar" class="h-full bg-gradient-to-r from-primary to-transparent w-1/4"></div>
+        </div>
+        <div class="flex justify-between text-[11px] font-label-caps">
+          <span class="text-on-surface-variant">AI ENGINE</span>
+          <span id="ai-engine-val" class="text-white">ACTIVE</span>
+        </div>
+        <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-primary-fixed-dim to-transparent w-3/4"></div>
+        </div>
+      </div>
+      <div class="absolute bottom-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
+        <span class="material-symbols-outlined text-6xl">analytics</span>
+      </div>
+    </div>
+    <div class="glass-card p-6 rounded-xl relative overflow-hidden group border-t-2 border-t-secondary">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-outlined text-secondary-fixed-dim">hub</span>
+        <h4 class="font-headline-md text-white text-lg">Node Status</h4>
+      </div>
+      <div id="node-status-container" class="flex flex-wrap gap-2">
+        <div class="bg-white/5 border border-white/10 px-3 py-1 rounded-full font-label-caps text-[10px] text-primary">NY_01: ONLINE</div>
+        <div class="bg-white/5 border border-white/10 px-3 py-1 rounded-full font-label-caps text-[10px] text-primary">LN_42: ONLINE</div>
+        <div class="bg-white/5 border border-white/10 px-3 py-1 rounded-full font-label-caps text-[10px] text-secondary">TK_09: SYNCING</div>
+        <div class="bg-white/5 border border-white/10 px-3 py-1 rounded-full font-label-caps text-[10px] text-primary">SF_03: ONLINE</div>
+      </div>
+    </div>
+    <div class="glass-card p-6 rounded-xl relative overflow-hidden group">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-outlined text-primary">security</span>
+        <h4 class="font-headline-md text-white text-lg">Security Vector</h4>
+      </div>
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="font-label-caps text-[10px] text-on-surface-variant">THREAT LEVEL</p>
+          <p class="font-metric-xl text-headline-md text-primary">NULL</p>
+        </div>
+        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center border border-primary/20">
+          <span class="material-symbols-outlined text-primary text-3xl">verified_user</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Goals Section -->
+  <section class="mt-gutter grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+    <div class="lg:col-span-5 glass-card p-6 rounded-xl flex flex-col justify-between">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined text-primary-fixed-dim">architecture</span>
+          <h4 class="font-headline-md text-white text-lg">AI Goal Architect</h4>
+        </div>
+        <p class="text-xs text-on-surface-variant mb-6 leading-relaxed">Decompose long-term projects or life milestones into actionable, sequential sub-goals with specific deadlines using Gemini.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-label-caps text-on-surface-variant mb-2">HIGH-LEVEL GOAL</label>
+            <input type="text" id="goal-input" class="w-full bg-surface-container-lowest/50 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-primary/50 placeholder:text-on-surface-variant/50" placeholder="e.g. Integrate Failure Prevention OS Backend"/>
+          </div>
+          <div>
+            <label class="block text-[10px] font-label-caps text-on-surface-variant mb-2">TARGET DATE</label>
+            <input type="date" id="goal-date" class="w-full bg-surface-container-lowest/50 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-primary/50"/>
+          </div>
+        </div>
+      </div>
+      <button onclick="decomposeGoal()" id="decompose-btn" class="w-full mt-6 py-3 bg-primary text-on-primary font-label-caps text-[11px] tracking-wider rounded-lg hover:opacity-95 active:scale-[0.98] transition-all font-semibold flex items-center justify-center gap-2">
+        DECOMPOSE WITH AI
+        <span class="material-symbols-outlined text-[16px]">psychology</span>
+      </button>
+    </div>
+    <div class="lg:col-span-7 glass-card p-6 rounded-xl flex flex-col">
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-secondary">checklist</span>
+          <h4 class="font-headline-md text-white text-lg">Goal Hub</h4>
+        </div>
+        <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest" id="goals-count">0 Goals Tracked</span>
+      </div>
+      <div id="goals-skeleton" class="space-y-3">
+        <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 70%;"></div><div class="skeleton skeleton-text-sm" style="width: 40%;"></div><div class="skeleton skeleton-bar" style="width: 60%;"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 55%;"></div><div class="skeleton skeleton-text-sm" style="width: 30%;"></div><div class="skeleton skeleton-bar" style="width: 40%;"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 60%;"></div><div class="skeleton skeleton-text-sm" style="width: 35%;"></div><div class="skeleton skeleton-bar" style="width: 50%;"></div></div>
+      </div>
+      <div id="goals-list-container" class="space-y-4 max-h-[350px] overflow-y-auto pr-2 hidden"></div>
+    </div>
+  </section>
+</main>
+
+<!-- FAB -->
+<div class="fixed bottom-28 right-8 z-50">
+  <button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-[0_0_20px_rgba(60,215,255,0.6)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all group" onclick="window.location.href='radar.html'">
+    <span class="material-symbols-outlined group-hover:rotate-12 transition-transform">bolt</span>
+  </button>
+</div>
+{% endblock %}
+
+{% block js_extra %}
+<script src="shared/knowledge-graph.js"></script>
+<script src="shared/ai-calendar.js"></script>
+<script>
+  const updateAzimuth = () => {
+      const az = document.getElementById('azimuth-display');
+      if (az) { az.innerText = `AZIMUTH: ${(Math.random() * 360).toFixed(1)}`; }
+  };
+  setInterval(updateAzimuth, 2000);
+
+  const fetchStatus = async () => {
+      FutureShield.showSkeleton('status-skeleton', true);
+      FutureShield.showSkeleton('metrics-skeleton', true);
+      try {
+          const response = await fetch('/api/status');
+          if (!response.ok) { FutureShield.showSkeleton('status-skeleton', false); FutureShield.showSkeleton('metrics-skeleton', false); return; }
+          const data = await response.json();
+          FutureShield.showSkeleton('status-skeleton', false);
+          FutureShield.showSkeleton('metrics-skeleton', false);
+          document.getElementById('status-content').classList.remove('hidden');
+          document.getElementById('metrics-content').classList.remove('hidden');
+          const scoreDisplay = document.getElementById('global-success-score');
+          if (scoreDisplay) scoreDisplay.innerText = `${data.success_score}%`;
+          const circle = document.querySelector('svg circle.text-primary-fixed-dim');
+          if (circle) { circle.style.strokeDashoffset = 283 - (283 * data.success_score) / 100; }
+          const dn = document.getElementById('data-nodes-val');
+          if (dn) dn.innerText = data.data_nodes;
+          const lat = document.getElementById('latency-val');
+          if (lat) lat.innerText = data.latency;
+          const cl = document.getElementById('core-load-val');
+          if (cl) cl.innerText = data.telemetry.core_load;
+          const cb = document.getElementById('core-load-bar');
+          if (cb) cb.style.width = data.telemetry.core_load;
+          const ae = document.getElementById('ai-engine-val');
+          if (ae) ae.innerText = data.telemetry.ai_engine;
+          const nc = document.getElementById('node-status-container');
+          if (nc && data.nodes) {
+              nc.innerHTML = '';
+              data.nodes.forEach(node => {
+                  const nd = document.createElement('div');
+                  let c = 'text-primary';
+                  if (node.status === 'SYNCING') c = 'text-secondary';
+                  if (node.status === 'OFFLINE') c = 'text-error';
+                  nd.className = `bg-white/5 border border-white/10 px-3 py-1 rounded-full font-label-caps text-[10px] ${c}`;
+                  nd.innerText = `${node.id}: ${node.status}`;
+                  nc.appendChild(nd);
+              });
+          }
+      } catch (error) { console.error("Error fetching status telemetry:", error); }
+  };
+
+  const fetchGoals = async () => {
+      FutureShield.showSkeleton('goals-skeleton', true);
+      try {
+          const response = await fetch('/api/goals');
+          if (!response.ok) { FutureShield.showSkeleton('goals-skeleton', false); return; }
+          const data = await response.json();
+          const gc = document.getElementById('goals-count');
+          if (gc) gc.innerText = `${data.goals.length} Goals Tracked`;
+          const container = document.getElementById('goals-list-container');
+          if (container) {
+              if (data.goals.length === 0) {
+                  FutureShield.showSkeleton('goals-skeleton', false);
+                  container.classList.remove('hidden');
+                  container.innerHTML = '<p class="text-xs text-on-surface-variant">No active goals. Decompose a goal using the AI Architect to begin!</p>';
+                  return;
+              }
+              container.innerHTML = '';
+              container.classList.remove('hidden');
+              data.goals.forEach(goal => {
+                  const badgeColor = goal.status === 'COMPLETED' ? 'text-primary border-primary/20 bg-primary/5' : 'text-secondary border-secondary/20 bg-secondary/5';
+                  const card = document.createElement('div');
+                  card.className = 'p-4 rounded-xl border border-white/5 bg-white/5 flex flex-col gap-3';
+                  card.innerHTML = `<div class="flex justify-between items-start"><div><h5 class="text-sm font-semibold text-white leading-tight">${goal.title}</h5><p class="text-[10px] text-on-surface-variant font-mono mt-1">Deadline: ${goal.deadline}</p></div><span class="font-label-caps text-[9px] px-2 py-0.5 border rounded ${badgeColor}">${goal.status}</span></div><div class="flex items-center gap-3"><input type="range" min="0" max="100" value="${goal.progress}" class="flex-grow h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary" onchange="updateGoalProgress(${goal.id}, this.value)"/><span class="text-xs font-mono text-primary w-8 text-right">${goal.progress}%</span></div>`;
+                  container.appendChild(card);
+              });
+              FutureShield.showSkeleton('goals-skeleton', false);
+          }
+      } catch (e) { console.error("Error loading goals:", e); FutureShield.showSkeleton('goals-skeleton', false); }
+  };
+
+  const updateGoalProgress = async (goalId, val) => {
+      try {
+          const response = await fetch(`/api/goals/${goalId}?progress=${val}`, { method: 'PUT' });
+          if (response.ok) { fetchGoals(); fetchStatus(); }
+      } catch (e) { console.error("Error updating goal progress:", e); }
+  };
+
+  const decomposeGoal = async () => {
+      const titleInput = document.getElementById('goal-input');
+      const dateInput = document.getElementById('goal-date');
+      const btn = document.getElementById('decompose-btn');
+      const title = titleInput.value.trim();
+      const date = dateInput.value;
+      if (!title || !date) {
+          if (window.FutureShield && window.FutureShield.showToast) { window.FutureShield.showToast("Please enter a goal title and target date.", "error"); }
+          else { alert("Please enter a goal title and target date."); }
+          return;
+      }
+      btn.disabled = true;
+      btn.innerText = "DECOMPOSING GOAL...";
+      btn.className = "w-full mt-6 py-3 bg-surface-container-high text-on-surface-variant font-label-caps text-[11px] tracking-wider rounded-lg cursor-not-allowed transition-all font-semibold flex items-center justify-center gap-2";
+      try {
+          const response = await fetch('/api/goals/decompose', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ goal_title: title, target_date: date }) });
+          if (!response.ok) throw new Error("Decompose API failed");
+          titleInput.value = '';
+          dateInput.value = '';
+          if (window.FutureShield && window.FutureShield.showToast) { window.FutureShield.showToast("Goal decomposed into 3 milestones.", "success"); }
+          fetchGoals();
+          fetchStatus();
+      } catch (e) {
+          console.error(e);
+          if (window.FutureShield && window.FutureShield.showToast) { window.FutureShield.showToast("Failed to decompose goal: " + e.message, "error"); }
+          else { alert("Failed to decompose goal: " + e.message); }
+      } finally {
+          btn.disabled = false;
+          btn.innerText = "DECOMPOSE WITH AI";
+          btn.className = "w-full mt-6 py-3 bg-primary text-on-primary font-label-caps text-[11px] tracking-wider rounded-lg hover:opacity-95 active:scale-[0.98] transition-all font-semibold flex items-center justify-center gap-2";
+      }
+  };
+
+  const updateLastBackupIndicator = () => {
+      const label = document.getElementById('last-backup-label');
+      if (!label) return;
+      const ts = localStorage.getItem('last_backup_time');
+      if (!ts) {
+          label.classList.add('hidden');
+          return;
+      }
+      const elapsed = Date.now() - parseInt(ts, 10);
+      let text;
+      if (elapsed < 60000) {
+          text = 'Just now';
+      } else if (elapsed < 3600000) {
+          const mins = Math.floor(elapsed / 60000);
+          text = mins + 'm ago';
+      } else if (elapsed < 86400000) {
+          const hrs = Math.floor(elapsed / 3600000);
+          text = hrs + 'h ago';
+      } else {
+          const days = Math.floor(elapsed / 86400000);
+          text = days + 'd ago';
+      }
+      label.textContent = text;
+      label.classList.remove('hidden');
+  };
+
+  const formatFileSize = (bytes) => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  };
+
+  const downloadBackup = async () => {
+      try {
+          const response = await fetch('/api/demo/export');
+          if (!response.ok) { throw new Error('Export failed'); }
+          const blob = await response.blob();
+          const confirmed = await FutureShield.showConfirmDialog({
+              title: 'Export Backup',
+              message: 'Download a full JSON backup of all your goals, threats, focus records, and sessions?',
+              confirmLabel: 'Download',
+              cancelLabel: 'Cancel',
+              confirmVariant: 'primary',
+              size: formatFileSize(blob.size),
+          });
+          if (!confirmed) {
+              return;
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `futureshield_backup_${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          localStorage.setItem('last_backup_time', Date.now().toString());
+          updateLastBackupIndicator();
+          if (window.FutureShield && window.FutureShield.showToast) {
+              FutureShield.showToast('Data exported successfully.', 'success');
+          }
+      } catch (e) {
+          console.error('Export error:', e);
+          if (window.FutureShield && window.FutureShield.showToast) {
+              FutureShield.showToast('Export failed: ' + e.message, 'error');
+          }
+      }
+  };
+
+  const uploadBackup = async (fileInput) => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (!file.name.endsWith('.json')) {
+          if (window.FutureShield && window.FutureShield.showToast) {
+              FutureShield.showToast('Please select a .json backup file.', 'error');
+          }
+          fileInput.value = '';
+          return;
+      }
+      try {
+          const text = await file.text();
+          const payload = JSON.parse(text);
+          const response = await fetch('/api/demo/import', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: text,
+          });
+          if (!response.ok) {
+              const err = await response.json();
+              throw new Error(err.detail || err.message || 'Import failed');
+          }
+          const result = await response.json();
+          if (window.FutureShield && window.FutureShield.showToast) {
+              FutureShield.showToast(
+                  `Backup restored: ${result.imported.goals} goals, ${result.imported.threats} threats, ${result.imported.focus_records} records, ${result.imported.focus_sessions} sessions.`,
+                  'success',
+                  6000
+              );
+          }
+          // Refresh all dashboard data
+          fetchStatus();
+          fetchGoals();
+          setTimeout(generateSummary, 500);
+      } catch (e) {
+          console.error('Upload error:', e);
+          if (window.FutureShield && window.FutureShield.showToast) {
+              FutureShield.showToast('Restore failed: ' + e.message, 'error');
+          }
+      } finally {
+          fileInput.value = '';
+      }
+  };
+
+  document.getElementById('goal-date').value = new Date().toISOString().split('T')[0];
+  fetchStatus();
+  fetchGoals();
+  updateLastBackupIndicator();
+  setInterval(() => { fetchStatus(); fetchGoals(); }, 3000);
+  setInterval(updateLastBackupIndicator, 30000);
+</script>
+<script>
+  const generateSummary = async () => {
+      const btn = document.getElementById('summary-btn');
+      const period = document.getElementById('summary-period').value;
+      const loading = document.getElementById('summary-loading');
+      const content = document.getElementById('summary-content');
+      const error = document.getElementById('summary-error');
+      loading.classList.remove('hidden');
+      content.classList.add('hidden');
+      error.classList.add('hidden');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">sync</span> ANALYZING...';
+      try {
+          const response = await fetch('/api/summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ period: period }) });
+          if (!response.ok) throw new Error('Summary API failed');
+          const data = await response.json();
+          const s = data.summary;
+          const score = s.productivity_score;
+          document.getElementById('summary-score').innerText = score;
+          const ring = document.getElementById('summary-score-ring');
+          const offset = 264 - (264 * score) / 100;
+          ring.style.strokeDashoffset = offset;
+          if (score >= 70) ring.style.stroke = '#00d4ff';
+          else if (score >= 40) ring.style.stroke = '#d0bcff';
+          else ring.style.stroke = '#ffb4ab';
+          document.getElementById('summary-assessment').innerText = s.overall_assessment;
+          document.getElementById('summary-period-label').innerText = period.toUpperCase() + ' INTELLIGENCE REPORT';
+          const insightsList = document.getElementById('summary-insights');
+          insightsList.innerHTML = '';
+          s.key_insights.forEach((insight, i) => {
+              const li = document.createElement('li');
+              li.className = 'flex gap-2 text-[11px] text-on-surface-variant';
+              li.innerHTML = '<span class="text-primary shrink-0 mt-0.5">◆</span> <span>' + insight + '</span>';
+              insightsList.appendChild(li);
+          });
+          document.getElementById('summary-priority').innerText = s.top_priority;
+          document.getElementById('summary-risk').innerText = s.risk_warning;
+          document.getElementById('summary-energy-text').innerText = s.energy_verdict;
+          content.classList.remove('hidden');
+          content.style.opacity = '0';
+          content.style.transform = 'translateY(10px)';
+          requestAnimationFrame(() => {
+              content.style.transition = 'all 0.5s ease';
+              content.style.opacity = '1';
+              content.style.transform = 'translateY(0)';
+          });
+      } catch (e) {
+          console.error('Summary error:', e);
+          document.getElementById('summary-error-text').innerText = 'Failed to generate AI summary. ' + e.message;
+          error.classList.remove('hidden');
+      } finally {
+          loading.classList.add('hidden');
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">auto_awesome</span> REGENERATE';
+      }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+      if (document.getElementById('knowledge-graph')) FutureShield.createKnowledgeGraph('knowledge-graph');
+      if (document.getElementById('ai-calendar')) FutureShield.createAICalendar('ai-calendar');
+      setTimeout(generateSummary, 500);
+  });
+</script>
+{% endblock %}

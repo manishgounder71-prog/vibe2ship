@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}FutureShield AI | Mission Control{% endblock %}
+{% block body_class %} overflow-x-hidden{% endblock %}
+
+{% block head_extra %}
+<style>
+  .orb-container {
+    filter: drop-shadow(0 0 40px rgba(60, 215, 255, 0.3));
+  }
+  .radar-pulse {
+    position: relative;
+  }
+  .radar-pulse::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #3cd7ff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: radar 2s ease-out infinite;
+  }
+  @keyframes radar {
+    0% { width: 0%; height: 0%; opacity: 0.8; }
+    100% { width: 250%; height: 250%; opacity: 0; }
+  }
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(87,27,193,0.3); border-color: rgba(87,27,193,0.4); }
+    50% { box-shadow: 0 0 30px rgba(87,27,193,0.6); border-color: rgba(87,27,193,0.8); }
+  }
+</style>
+{% endblock %}
+
+{% block header %}
+<header class="fixed top-0 w-full bg-surface/60 backdrop-blur-3xl border-b border-white/10 z-50 flex justify-between items-center px-margin-mobile h-16 md:px-margin-desktop">
+  <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform" onclick="window.location.href='index.html'">
+    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">hub</span>
+    <span class="font-label-caps text-label-caps tracking-widest text-primary-fixed-dim uppercase">FutureShield AI</span>
+  </div>
+  <div class="hidden md:flex items-center gap-8">
+    <nav class="flex gap-6">
+      <a class="text-on-surface-variant font-label-caps text-label-caps hover:text-primary transition-colors" href="index.html">OS CAPABILITIES</a>
+      <a class="text-on-surface-variant font-label-caps text-label-caps hover:text-primary transition-colors" href="twin.html">NEURAL LINK</a>
+      <a class="text-on-surface-variant font-label-caps text-label-caps hover:text-primary transition-colors" href="radar.html">FLEET DEPLOYMENT</a>
+    </nav>
+    <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings</button>
+  </div>
+  <div class="md:hidden">
+    <span class="material-symbols-outlined text-on-surface-variant">menu</span>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+  <!-- WebGL Background Shader -->
+  <div class="absolute inset-0 w-full h-full opacity-60" style="display:block;">
+    <canvas id="shader-canvas-ANIMATION_2" style="display:block;width:100%;height:100%"></canvas>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="relative z-10 flex flex-col items-center text-center px-margin-mobile max-w-4xl pt-24 pb-32">
+    <div class="orb-container mb-12 animate-float">
+      <div class="w-64 h-64 md:w-80 md:h-80 mx-auto" style="display:block;">
+        <script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+        <div id="threejs-container-ANIMATION_3" style="width:100%;height:100%"></div>
+        <script>
+        (function() {
+          const container = document.getElementById('threejs-container-ANIMATION_3');
+          const devicePixelRatio = window.devicePixelRatio || 1;
+          const width = container.clientWidth || window.innerWidth;
+          const height = container.clientHeight || window.innerHeight;
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+          const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+          renderer.setSize(width, height);
+          container.appendChild(renderer.domElement);
+          const geometry = new THREE.IcosahedronGeometry(1, 4);
+          const material = new THREE.MeshPhongMaterial({
+              color: 0x00d4ff,
+              wireframe: true,
+              transparent: true,
+              opacity: 0.8,
+              emissive: 0x00d4ff,
+              emissiveIntensity: 0.5
+          });
+          const orb = new THREE.Mesh(geometry, material);
+          scene.add(orb);
+          const light = new THREE.PointLight(0x8b5cf6, 2, 10);
+          light.position.set(2, 2, 2);
+          scene.add(light);
+          const ambientLight = new THREE.AmbientLight(0x404040);
+          scene.add(ambientLight);
+          camera.position.z = 3;
+          function animate() {
+              requestAnimationFrame(animate);
+              const time = Date.now() * 0.001;
+              orb.rotation.y += 0.01;
+              orb.rotation.z += 0.005;
+              const scale = 1.0 + Math.sin(time * 2.0) * 0.1;
+              orb.scale.set(scale, scale, scale);
+              renderer.render(scene, camera);
+          }
+          window.addEventListener('resize', () => {
+              const w = container.clientWidth || window.innerWidth;
+              const h = container.clientHeight || window.innerHeight;
+              renderer.setSize(w, h);
+              camera.aspect = w / h;
+              camera.updateProjectionMatrix();
+          });
+          animate();
+        })();
+        </script>
+      </div>
+    </div>
+    <div class="space-y-6">
+      <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-md mb-4">
+        <span class="w-2 h-2 rounded-full bg-primary-fixed-dim radar-pulse"></span>
+        <span class="font-label-caps text-[10px] tracking-widest text-primary uppercase">System Status: Optimal</span>
+      </div>
+      <h1 class="font-display-lg-mobile md:text-display-lg font-extrabold text-on-surface leading-tight tracking-tight">
+        Predict Failure <br class="hidden md:block"/> <span class="text-primary-fixed-dim">Before It Happens.</span>
+      </h1>
+      <p class="font-body-md text-on-surface-variant max-w-2xl mx-auto leading-relaxed opacity-90">
+        FutureShield AI creates a digital twin of your behavior, predicts missed deadlines, and launches autonomous rescue missions to secure your mission-critical objectives.
+      </p>
+    </div>
+    <div class="mt-12 flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+      <a href="dashboard.html" class="primary-glow-button px-8 py-4 rounded-xl text-on-primary font-label-caps tracking-wider w-full md:w-64 flex items-center justify-center gap-2 text-decoration-none group">
+        LAUNCH COMMAND CENTER
+        <span class="material-symbols-outlined text-[18px] group-hover:rotate-12 transition-transform">rocket_launch</span>
+      </a>
+      <button id="demo-launch-btn" onclick="FutureShield.startDemo()" class="px-8 py-4 rounded-xl border border-primary-fixed-dim/40 text-primary-fixed-dim font-label-caps tracking-wider w-full md:w-64 hover:bg-primary/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer bg-transparent" style="border-color:#571bc1;color:#d0bcff;box-shadow:0 0 15px rgba(87,27,193,0.3);animation:glowPulse 3s ease-in-out infinite;">
+        <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+        TAKE GUIDED TOUR
+        <span class="material-symbols-outlined text-[18px]">tour</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Bento Matrix Section -->
+  <section class="relative z-10 w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-20">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <a href="radar.html" class="md:col-span-8 glass-panel rounded-3xl p-8 overflow-hidden relative min-h-[300px] hover:border-primary/40 transition-all block">
+        <div class="relative z-20 flex flex-col h-full justify-between">
+          <div>
+            <span class="font-label-caps text-primary uppercase tracking-widest block mb-2">Neural Observation</span>
+            <h3 class="font-headline-md text-on-surface text-lg">Predictive Temporal Analysis</h3>
+          </div>
+          <div class="flex items-end justify-between mt-12">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-outline-variant">
+                <span class="material-symbols-outlined text-sm">visibility</span>
+                <span class="text-xs font-label-caps">SCANNING BEHAVIORAL NODES...</span>
+              </div>
+              <div class="text-primary-fixed-dim font-metric-xl">98.4%</div>
+              <div class="text-[10px] font-label-caps text-on-surface-variant uppercase">Prediction Accuracy Rate</div>
+            </div>
+            <div class="w-32 h-32 opacity-30">
+              <span class="material-symbols-outlined text-8xl text-primary" style="font-variation-settings: 'wght' 100;">radar</span>
+            </div>
+          </div>
+        </div>
+        <div class="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
+          <div class="border-t border-r border-primary w-12 h-12"></div>
+        </div>
+      </a>
+      <div class="md:col-span-4 glass-panel rounded-3xl p-8 flex flex-col justify-between border-primary-fixed-dim/30">
+        <div class="flex justify-between items-start">
+          <span class="material-symbols-outlined text-error text-4xl">warning</span>
+          <div class="text-right">
+            <span class="font-label-caps text-error text-[10px] uppercase block">Urgent Threat</span>
+            <span class="text-on-surface font-label-caps">LEVEL 4</span>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-headline-md text-on-surface mb-2">Deadline Anomalies</h4>
+          <p class="text-on-surface-variant text-sm">Detected high-probability delay in Project "Phoenix" due to resource fragmentation.</p>
+        </div>
+        <button class="mt-6 w-full py-3 rounded-lg bg-error-container text-on-error-container font-label-caps text-[10px] uppercase tracking-widest hover:opacity-80 transition-opacity">
+          Authorize Countermeasure
+        </button>
+      </div>
+      <a href="twin.html" class="md:col-span-4 glass-panel rounded-3xl p-8 flex flex-col items-center text-center hover:border-primary/40 transition-all block">
+        <div class="w-full aspect-square bg-surface-container-low rounded-2xl flex items-center justify-center mb-6 border border-white/5 relative overflow-hidden group">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <img class="w-full h-full object-cover" data-alt="A sophisticated 3D holographic wireframe of a human profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUwv6Wj27QOOS9x6MyhXR-YpTLGXm5PhDj9s1bYQoJqKCM5YwmMzqrfP2E4FzWKE_aJBArn0DI1r1uhLhmna8iUdG8WZDtz9YJgzKAaKvPKHPcHXXkUJTLDKHmn1_2_n2igsOUPOzpf7KVtCiWGP_pcbCzpX8Lj04-7_wYQGnK8A8HBfA0BA1HwcQgUB2t-Up1B1ebW93PGmKdG_mBr4aC-HXR18fckHFiq-1q2zBnNVGAFbPWebfo"/>
+        </div>
+        <h4 class="font-headline-md text-on-surface mb-2 text-lg">Behavioral Cloning</h4>
+        <p class="text-on-surface-variant text-sm">Real-time synchronization with your professional ecosystem.</p>
+      </a>
+      <div class="md:col-span-8 glass-panel rounded-3xl p-6 relative overflow-hidden">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined text-primary-fixed-dim">hub</span>
+          <h4 class="font-headline-md text-white text-lg">Knowledge & Dependency Graph</h4>
+          <span class="ml-auto text-[10px] font-label-caps text-on-surface-variant">Drag nodes · Scroll to zoom</span>
+        </div>
+        <div id="knowledge-graph" style="width:100%;height:350px;border-radius:8px;overflow:hidden;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dynamic Ticker -->
+  <div class="w-full border-y border-white/5 py-4 bg-surface-container-lowest/50 backdrop-blur-md mb-20">
+    <div class="flex scrolling-text items-center gap-12">
+      <div class="flex items-center gap-4 text-primary-fixed-dim/50 font-label-caps text-sm">
+        <span class="material-symbols-outlined">psychology</span>
+        NEURAL LINK ESTABLISHED [OK]
+      </div>
+      <div class="flex items-center gap-4 text-primary-fixed-dim/50 font-label-caps text-sm">
+        <span class="material-symbols-outlined">radar</span>
+        SCANNING PROBABILITY FIELDS...
+      </div>
+      <div class="flex items-center gap-4 text-primary-fixed-dim/50 font-label-caps text-sm">
+        <span class="material-symbols-outlined">shield</span>
+        FAILURE MITIGATION ACTIVE
+      </div>
+      <div class="flex items-center gap-4 text-primary-fixed-dim/50 font-label-caps text-sm">
+        <span class="material-symbols-outlined">psychology</span>
+        NEURAL LINK ESTABLISHED [OK]
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="md:hidden fixed bottom-8 w-full flex justify-center z-50 px-margin-mobile">
+  <div class="w-[90%] glass-panel rounded-full py-3 px-6 flex justify-between items-center shadow-[0_0_20px_rgba(60,215,255,0.15)]">
+    <a href="dashboard.html" class="flex items-center justify-center text-outline-variant p-3 hover:text-tertiary-fixed-dim active:scale-90 transition-transform">
+      <span class="material-symbols-outlined">dashboard</span>
+    </a>
+    <a href="simulation.html" class="flex items-center justify-center text-outline-variant p-3 hover:text-tertiary-fixed-dim active:scale-90 transition-transform">
+      <span class="material-symbols-outlined">assignment_late</span>
+    </a>
+    <a href="radar.html" class="flex items-center justify-center text-outline-variant p-3 hover:text-tertiary-fixed-dim active:scale-90 transition-transform">
+      <span class="material-symbols-outlined">radar</span>
+    </a>
+    <a href="twin.html" class="flex items-center justify-center text-outline-variant p-3 hover:text-tertiary-fixed-dim active:scale-90 transition-transform">
+      <span class="material-symbols-outlined">psychology</span>
+    </a>
+  </div>
+</nav>
+{% endblock %}
+
+{% block footer %}
+<footer class="relative z-10 w-full py-12 px-margin-mobile md:px-margin-desktop border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+  <div class="flex flex-col items-center md:items-start gap-4">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-xl">hub</span>
+      <span class="font-label-caps text-xs tracking-widest uppercase">FutureShield AI</span>
+    </div>
+    <p class="text-outline-variant text-[10px] font-label-caps">© 2026 NEURAL DEFENSE SYSTEMS CORP. ALL RIGHTS RESERVED.</p>
+  </div>
+  <div class="flex gap-8">
+    <a class="text-on-surface-variant font-label-caps text-[10px] hover:text-primary transition-colors uppercase" href="#">Data Sovereignty</a>
+    <a class="text-on-surface-variant font-label-caps text-[10px] hover:text-primary transition-colors uppercase" href="#">Neural Ethics</a>
+    <a class="text-on-surface-variant font-label-caps text-[10px] hover:text-primary transition-colors uppercase" href="#">API Control</a>
+  </div>
+</footer>
+{% endblock %}
+
+{% block js_extra %}
+<script src="shared/knowledge-graph.js"></script>
+<script src="shared/ai-calendar.js"></script>
+<script>
+  document.addEventListener('mousemove', (e) => {
+      const orb = document.querySelector('.orb-container');
+      const x = (window.innerWidth / 2 - e.pageX) / 40;
+      const y = (window.innerHeight / 2 - e.pageY) / 40;
+      if(orb) {
+          orb.style.transform = `translate(${x}px, ${y}px)`;
+      }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('knowledge-graph')) {
+      FutureShield.createKnowledgeGraph('knowledge-graph');
+    }
+    if (document.getElementById('ai-calendar')) {
+      FutureShield.createAICalendar('ai-calendar');
+    }
+  });
+</script>
+{% endblock %}

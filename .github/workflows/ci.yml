@@ -1,0 +1,208 @@
+# FutureShield AI - CI/CD Pipeline
+#
+# Triggers on every push and on PRs to main:
+#   1. Test - Run pytest suite with linting
+#   2. E2E - Playwright browser tests
+#   3. Docker - Build container image
+#   4. Deploy - (optional) Push to Google Cloud Run
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - "**"         # Run on every push to any branch
+  pull_request:
+    branches: [main]  # Also run on PRs targeting main
+
+env:
+  PYTHON_VERSION: "3.11"
+  API_ACCESS_TOKEN: "shield-admin-pass"
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: futureshield
+          POSTGRES_PASSWORD: futureshield_secret
+          POSTGRES_DB: futureshield_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpq-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8
+
+      - name: Lint with flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Type check with mypy
+        run: |
+          python -m mypy main.py database.py rag.py routes/ tests/
+        env:
+          API_ACCESS_TOKEN: "shield-admin-pass"
+
+      - name: Verify .env.example exists
+        run: |
+          test -f .env.example || { echo "Missing .env.example"; exit 1; }
+
+      - name: Run all tests
+        run: |
+          pytest tests/ -v --tb=short --ignore=tests/test_e2e.py
+        env:
+          API_ACCESS_TOKEN: "shield-admin-pass"
+          FUTURESHIELD_DB_URL: "postgresql://futureshield:futureshield_secret@localhost:5432/futureshield_test"
+
+  e2e-tests:
+    name: E2E Playwright Tests
+    needs: test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: futureshield
+          POSTGRES_PASSWORD: futureshield_secret
+          POSTGRES_DB: futureshield_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpq-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Chromium browser
+        run: |
+          python -m playwright install chromium
+
+      - name: Run Playwright E2E tests
+        run: |
+          pytest tests/test_e2e.py -v --tb=short
+        env:
+          API_ACCESS_TOKEN: "shield-admin-pass"
+          FUTURESHIELD_DB_URL: "postgresql://futureshield:futureshield_secret@localhost:5432/futureshield_test"
+
+  docker-build:
+    name: Docker Build
+    needs: [test, e2e-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: futureshield-ai:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ------------------------------------------------------------------
+  # Deploy to Google Cloud Run
+  #
+  # Required GitHub Secrets (configure at repo Settings > Secrets > Actions):
+  #   GCP_PROJECT_ID : Your Google Cloud project ID
+  #   GCP_SA_KEY     : JSON key of a service account with
+  #                    'Cloud Run Admin' and 'Storage Admin' roles
+  #   GEMINI_API_KEY : Your Google Gemini API key
+  #   JWT_SECRET_KEY : Your JWT signing secret
+  #   DATABASE_URL   : Cloud SQL PostgreSQL connection string
+  #
+  # The job is skipped automatically if GCP_PROJECT_ID secret is not set.
+  # ------------------------------------------------------------------
+  deploy:
+    name: Deploy to Cloud Run
+    needs: docker-build
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      secrets.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build and push to GCR
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/futureshield:latest .
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/futureshield:latest
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: futureshield
+          image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/futureshield:latest
+          region: us-central1
+          flags: --allow-unauthenticated --add-cloudsql-instances=${{ secrets.CLOUD_SQL_INSTANCE }}
+          env_vars: |
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+            FUTURESHIELD_DB_URL=${{ secrets.DATABASE_URL }}

@@ -1,0 +1,56 @@
+{
+  "name": "FutureShield AI — Failure Prevention OS",
+  "short_name": "FutureShield",
+  "description": "Predict failure before it happens. AI-powered failure prevention system with digital twin, threat radar, and autonomous rescue missions.",
+  "start_url": "/dashboard.html",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#05070A",
+  "theme_color": "#111417",
+  "categories": ["productivity", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Command Center",
+      "short_name": "Dashboard",
+      "description": "Executive command center with live telemetry",
+      "url": "/dashboard.html",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Threat Radar",
+      "short_name": "Radar",
+      "description": "Failure prevention threat detection radar",
+      "url": "/radar.html",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Focus Timer",
+      "short_name": "Focus",
+      "description": "Start a focus session",
+      "url": "/dashboard.html?focus=1",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
+}

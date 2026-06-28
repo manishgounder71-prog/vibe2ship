@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% set active_page = 'rag' %}
+{% block title %}RAG Engine Dashboard | FutureShield AI{% endblock %}
+{% block body_class %} pb-32{% endblock %}
+
+{% block header %}
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-3xl border-b border-white/10 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16">
+  <div class="flex items-center gap-3 cursor-pointer active:scale-95 transition-transform" onclick="window.location.href='index.html'">
+    <span class="material-symbols-outlined text-primary text-headline-md">folder_open</span>
+    <span class="font-label-caps text-label-caps tracking-widest text-primary-fixed-dim">FUTURESHIELD AI</span>
+  </div>
+  <div class="flex items-center gap-4">
+    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-all hover:text-primary" onclick="reindexRag()" title="Re-index all data">refresh</span>
+    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-all hover:text-primary">settings</span>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+  <!-- Header -->
+  <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h1 class="font-headline-md text-headline-md text-primary mb-1">RAG Engine Dashboard</h1>
+      <p class="text-on-surface-variant font-label-caps tracking-tight">RETRIEVAL-AUGMENTED GENERATION • VECTOR STORE ANALYTICS</p>
+    </div>
+  </div>
+
+  <!-- Stats Cards Skeleton -->
+  <div id="stats-skeleton" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%; margin-top: 8px;"></div></div>
+    <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%; margin-top: 8px;"></div></div>
+    <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%; margin-top: 8px;"></div></div>
+    <div class="skeleton-card"><div class="skeleton skeleton-text" style="width: 50%;"></div><div class="skeleton skeleton-text-lg" style="width: 30%; margin-top: 8px;"></div></div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div id="stats-content" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="glass-card p-5 rounded-xl">
+      <p class="font-label-caps text-[10px] text-on-surface-variant mb-2">TOTAL DOCUMENTS</p>
+      <p id="stat-total" class="font-metric-xl text-headline-md text-primary">--</p>
+    </div>
+    <div class="glass-card p-5 rounded-xl">
+      <p class="font-label-caps text-[10px] text-on-surface-variant mb-2">BACKEND</p>
+      <p id="stat-backend" class="font-metric-xl text-headline-sm text-secondary-fixed-dim">--</p>
+    </div>
+    <div class="glass-card p-5 rounded-xl">
+      <p class="font-label-caps text-[10px] text-on-surface-variant mb-2">VOCABULARY SIZE</p>
+      <p id="stat-vocab" class="font-metric-xl text-headline-md text-tertiary">--</p>
+    </div>
+    <div class="glass-card p-5 rounded-xl">
+      <p class="font-label-caps text-[10px] text-on-surface-variant mb-2">STATUS</p>
+      <p id="stat-status" class="font-metric-xl text-headline-sm text-primary-fixed-dim">--</p>
+    </div>
+  </div>
+
+  <!-- Docs by Type -->
+  <div id="type-stats" class="hidden flex flex-wrap gap-3 mb-8"></div>
+
+  <!-- Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Left: Document List -->
+    <div class="lg:col-span-5 glass-card p-6 rounded-xl flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-label-caps text-[12px] text-primary-fixed-dim uppercase tracking-widest flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">description</span>
+          INDEXED DOCUMENTS
+        </h3>
+        <div class="flex items-center gap-2">
+          <select id="doc-type-filter" class="bg-surface-container-lowest/50 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-label-caps text-on-surface-variant focus:outline-none focus:border-primary/50" onchange="fetchDocuments()">
+            <option value="">All Types</option>
+            <option value="goal">Goals</option>
+            <option value="threat">Threats</option>
+            <option value="focus_session">Focus Sessions</option>
+            <option value="focus_record">Focus Records</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="doc-list-skeleton" class="space-y-2">
+        <div class="skeleton skeleton-text" style="width: 100%;"></div>
+        <div class="skeleton skeleton-text" style="width: 90%;"></div>
+        <div class="skeleton skeleton-text" style="width: 85%;"></div>
+        <div class="skeleton skeleton-text" style="width: 95%;"></div>
+        <div class="skeleton skeleton-text" style="width: 80%;"></div>
+      </div>
+
+      <div id="doc-list" class="hidden space-y-2 overflow-y-auto max-h-[500px] pr-1"></div>
+
+      <p id="doc-list-empty" class="hidden text-xs text-on-surface-variant text-center py-8">No documents indexed yet. Click ↻ to re-index.</p>
+    </div>
+
+    <!-- Right: Query Interface -->
+    <div class="lg:col-span-7 glass-card p-6 rounded-xl flex flex-col">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="material-symbols-outlined text-primary-fixed-dim text-[16px]">search</span>
+        <h3 class="font-label-caps text-[12px] text-primary-fixed-dim uppercase tracking-widest">VECTOR SEARCH</h3>
+      </div>
+
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="rag-query-input" placeholder="Search the vector store... e.g. 'project deadlines' or 'critical threats'"
+               class="flex-1 bg-surface-container-lowest/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 placeholder:text-on-surface-variant/50"
+               onkeypress="if(event.key==='Enter') runRagQuery()" />
+        <button onclick="runRagQuery()" id="query-btn" class="bg-primary text-on-primary px-5 py-3 rounded-xl font-label-caps text-[11px] tracking-wider hover:opacity-95 active:scale-95 transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">search</span>
+          SEARCH
+        </button>
+      </div>
+
+      <!-- Results -->
+      <div id="query-results" class="hidden space-y-3 overflow-y-auto max-h-[500px] pr-1"></div>
+      <div id="query-empty" class="hidden text-xs text-on-surface-variant text-center py-12 flex flex-col items-center gap-2">
+        <span class="material-symbols-outlined text-4xl text-on-surface-variant/30">travel_explore</span>
+        <span>Enter a query above to search the vector store.</span>
+      </div>
+      <div id="query-loading" class="hidden flex items-center justify-center py-12">
+        <div class="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block js_extra %}
+<script>
+  // ─── Fetch Stats ────────────────────────────────────────────────
+  var fetchStats = async function () {
+    FutureShield.showSkeleton('stats-skeleton', true);
+    try {
+      var resp = await fetch('/api/rag/stats');
+      if (!resp.ok) { FutureShield.showSkeleton('stats-skeleton', false); return; }
+      var data = await resp.json();
+      FutureShield.showSkeleton('stats-skeleton', false);
+      document.getElementById('stats-content').classList.remove('hidden');
+
+      document.getElementById('stat-total').innerText = data.total_documents || 0;
+      document.getElementById('stat-backend').innerText = data.backend === 'chromadb' ? 'ChromaDB' : 'TF-IDF (Fallback)';
+      document.getElementById('stat-vocab').innerText = data.vocabulary_size || '--';
+      document.getElementById('stat-status').innerText = data.initialized ? 'ACTIVE' : 'OFFLINE';
+      if (data.initialized) {
+        document.getElementById('stat-status').style.color = '#00d4ff';
+      }
+
+      // Type breakdown
+      var typeContainer = document.getElementById('type-stats');
+      typeContainer.innerHTML = '';
+      typeContainer.classList.remove('hidden');
+      var byType = data.documents_by_type || {};
+      var typeLabels = { goal: 'Goals', threat: 'Threats', focus_session: 'Focus Sessions', focus_record: 'Focus Records' };
+      var typeColors = { goal: '#00d4ff', threat: '#ffb4ab', focus_session: '#d0bcff', focus_record: '#93ecff' };
+      var hasTypes = false;
+      Object.keys(byType).forEach(function (t) {
+        hasTypes = true;
+        var badge = document.createElement('div');
+        badge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-label-caps';
+        badge.style.borderColor = (typeColors[t] || '#859398') + '40';
+        badge.style.color = typeColors[t] || '#859398';
+        badge.style.background = (typeColors[t] || '#859398') + '15';
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full" style="background:' + (typeColors[t] || '#859398') + ';"></span> ' +
+          (typeLabels[t] || t) + ': <strong>' + byType[t] + '</strong>';
+        typeContainer.appendChild(badge);
+      });
+      if (!hasTypes) {
+        typeContainer.classList.add('hidden');
+      }
+
+      fetchDocuments();
+    } catch (e) {
+      console.error('RAG stats error:', e);
+      FutureShield.showSkeleton('stats-skeleton', false);
+    }
+  };
+
+  // ─── Fetch Documents ────────────────────────────────────────────
+  var fetchDocuments = function () {
+    FutureShield.showSkeleton('doc-list-skeleton', true);
+    document.getElementById('doc-list').classList.add('hidden');
+    document.getElementById('doc-list-empty').classList.add('hidden');
+    var filter = document.getElementById('doc-type-filter').value;
+    var url = '/api/rag/documents?limit=30';
+    if (filter) url += '&type_filter=' + filter;
+
+    fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        FutureShield.showSkeleton('doc-list-skeleton', false);
+        var container = document.getElementById('doc-list');
+        container.innerHTML = '';
+
+        if (!data.documents || data.documents.length === 0) {
+          document.getElementById('doc-list-empty').classList.remove('hidden');
+          return;
+        }
+
+        container.classList.remove('hidden');
+        data.documents.forEach(function (doc) {
+          var typeColors = { goal: '#00d4ff', threat: '#ffb4ab', focus_session: '#d0bcff', focus_record: '#93ecff' };
+          var typeLabels = { goal: 'GOAL', threat: 'THREAT', focus_session: 'SESSION', focus_record: 'RECORD' };
+          var color = typeColors[doc.type] || '#859398';
+          var label = typeLabels[doc.type] || doc.type.toUpperCase();
+
+          var el = document.createElement('div');
+          el.className = 'p-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors';
+          el.innerHTML =
+            '<div class="flex items-center gap-2 mb-1.5">' +
+              '<span class="text-[8px] font-label-caps px-1.5 py-0.5 rounded border" style="border-color:' + color + '40;color:' + color + ';background:' + color + '15;">' + label + '</span>' +
+              '<span class="text-[9px] font-mono text-on-surface-variant/60 truncate flex-1">' + doc.id + '</span>' +
+            '</div>' +
+            '<p class="text-[11px] text-on-surface-variant leading-relaxed line-clamp-2">' + escapeHtml(doc.document) + '</p>';
+          container.appendChild(el);
+        });
+      })
+      .catch(function (e) {
+        console.error('RAG docs error:', e);
+        FutureShield.showSkeleton('doc-list-skeleton', false);
+      });
+  };
+
+  // ─── Query RAG ──────────────────────────────────────────────────
+  var runRagQuery = function () {
+    var input = document.getElementById('rag-query-input');
+    var query = input.value.trim();
+    if (!query) return;
+
+    var resultsContainer = document.getElementById('query-results');
+    var emptyContainer = document.getElementById('query-empty');
+    var loadingContainer = document.getElementById('query-loading');
+    var btn = document.getElementById('query-btn');
+
+    resultsContainer.classList.add('hidden');
+    emptyContainer.classList.add('hidden');
+    loadingContainer.classList.remove('hidden');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>';
+
+    fetch('/api/rag/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: query, n_results: 8 })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        loadingContainer.classList.add('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">search</span> SEARCH';
+        resultsContainer.innerHTML = '';
+        resultsContainer.classList.remove('hidden');
+
+        if (!data.results || data.results.length === 0) {
+          resultsContainer.innerHTML =
+            '<div class="text-center py-8 text-on-surface-variant text-xs flex flex-col items-center gap-2">' +
+              '<span class="material-symbols-outlined text-3xl text-on-surface-variant/30">search_off</span>' +
+              '<span>No results found for "' + escapeHtml(query) + '".</span>' +
+            '</div>';
+          return;
+        }
+
+        data.results.forEach(function (item, i) {
+          var meta = item.metadata || {};
+          var typeColors = { goal: '#00d4ff', threat: '#ffb4ab', focus_session: '#d0bcff', focus_record: '#93ecff' };
+          var typeLabels = { goal: 'GOAL', threat: 'THREAT', focus_session: 'SESSION', focus_record: 'RECORD' };
+          var docType = meta.type || 'unknown';
+          var color = typeColors[docType] || '#859398';
+          var label = typeLabels[docType] || docType.toUpperCase();
+          var dist = (item.distance || 0).toFixed(4);
+          var sim = ((1 - (item.distance || 0)) * 100).toFixed(1);
+
+          var el = document.createElement('div');
+          el.className = 'p-4 rounded-xl border border-white/5 bg-white/[0.02]';
+          el.innerHTML =
+            '<div class="flex items-center justify-between mb-2">' +
+              '<div class="flex items-center gap-2">' +
+                '<span class="text-[10px] text-on-surface-variant/40 font-mono">#' + (i + 1) + '</span>' +
+                '<span class="text-[8px] font-label-caps px-1.5 py-0.5 rounded border" style="border-color:' + color + '40;color:' + color + ';background:' + color + '15;">' + label + '</span>' +
+              '</div>' +
+              '<div class="flex items-center gap-2 text-[9px] font-mono">' +
+                '<span class="text-tertiary">' + sim + '%</span>' +
+                '<span class="text-on-surface-variant/40">| d=' + dist + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<p class="text-xs text-on-surface-variant leading-relaxed">' + escapeHtml(item.document) + '</p>';
+          resultsContainer.appendChild(el);
+        });
+      })
+      .catch(function (e) {
+        console.error('RAG query error:', e);
+        loadingContainer.classList.add('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">search</span> SEARCH';
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.innerHTML = '<div class="text-center py-8 text-error text-xs">Query failed: ' + e.message + '</div>';
+      });
+  };
+
+  // ─── Re-index ───────────────────────────────────────────────────
+  var reindexRag = function () {
+    if (window.FutureShield && FutureShield.showConfirmDialog) {
+      FutureShield.showConfirmDialog({
+        title: 'Re-index Vector Store',
+        message: 'Clear all existing document embeddings and re-index all goals, threats, focus sessions, and records from the database?',
+        confirmLabel: 'Re-index',
+        cancelLabel: 'Cancel',
+        confirmVariant: 'primary',
+      }).then(function (confirmed) {
+        if (confirmed) doReindex();
+      });
+    } else {
+      if (confirm('Re-index all data into the RAG engine?')) doReindex();
+    }
+  };
+
+  var doReindex = function () {
+    var btn = document.querySelector('[title="Re-index all data"]');
+    if (btn) { btn.classList.add('animate-spin'); btn.style.pointerEvents = 'none'; }
+    fetch('/api/rag/reindex', { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (btn) { btn.classList.remove('animate-spin'); btn.style.pointerEvents = 'auto'; }
+        if (data.status === 'success') {
+          if (FutureShield.showToast) {
+            FutureShield.showToast('Re-indexed ' + data.total_documents + ' documents successfully.', 'success');
+          }
+          fetchStats();
+        } else {
+          if (FutureShield.showToast) {
+            FutureShield.showToast('Re-index failed: ' + (data.message || 'unknown error'), 'error');
+          }
+        }
+      })
+      .catch(function (e) {
+        if (btn) { btn.classList.remove('animate-spin'); btn.style.pointerEvents = 'auto'; }
+        if (FutureShield.showToast) FutureShield.showToast('Re-index error: ' + e.message, 'error');
+      });
+  };
+
+  // ─── Helpers ────────────────────────────────────────────────────
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  // ─── Init ───────────────────────────────────────────────────────
+  fetchStats();
+</script>
+{% endblock %}
