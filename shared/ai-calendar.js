@@ -73,7 +73,7 @@
     timelineWrap.style.cssText = "position:relative;border-radius:12px;overflow:hidden;background:rgba(17,20,23,0.6);border:1px solid rgba(255,255,255,0.05);backdrop-filter:blur(60px);";
 
     var timeline = document.createElement("div");
-    timeline.style.cssText = "position:relative;width:100%;padding:16px 0;";
+    timeline.style.cssText = "position:relative;width:100%;height:380px;padding:16px 0;";
 
     // Hour labels + grid lines (0-24)
     for (var h = 0; h <= 24; h++) {
