@@ -19,8 +19,8 @@ https://futureshield-ai-uxxxxxxxx-uc.a.run.app
 4. Retrieve the deployed URL from Cloud Run dashboard
 
 ## 2. GitHub Repository Link
-**Placeholder URL (to be replaced after actual repo creation):**  
-https://github.com/yourusername/futureshield-ai
+**GitHub Repository Link:**  
+https://github.com/manishgounder71-prog/vibe2ship
 
 **Repository Contents:**
 - `/` - Root: Dockerfile, requirements.txt, main.py, .env.example
