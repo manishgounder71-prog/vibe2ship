@@ -141,6 +141,6 @@
   };
 
   fetchThreats();
-  setInterval(fetchThreats, 5000);
+  FutureShield.addInterval('threats-refresh', fetchThreats, 15000);
 </script>
 {% endblock %}

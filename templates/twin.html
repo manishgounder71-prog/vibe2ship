@@ -202,7 +202,7 @@
 
   fetchTwin();
   fetchFocusStats();
-  setInterval(fetchTwin, 4000);
-  setInterval(fetchFocusStats, 8000);
+  FutureShield.addInterval('twin-refresh', fetchTwin, 15000);
+  FutureShield.addInterval('focus-stats-refresh', fetchFocusStats, 15000);
 </script>
 {% endblock %}

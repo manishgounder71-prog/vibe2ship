@@ -191,6 +191,68 @@ html {
     scroll-behavior: smooth;
 }
 
+/* ─── View Transition API (cross-document smooth navigation) ──── */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.25s;
+    animation-timing-function: ease;
+    mix-blend-mode: normal;
+}
+
+/* Dark-theme friendly crossfade — prevents white flash */
+::view-transition-old(root) {
+    animation: 0.25s ease-out both vt-fade-out;
+}
+
+::view-transition-new(root) {
+    animation: 0.25s ease-in both vt-fade-in;
+}
+
+@keyframes vt-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes vt-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ─── Page content fade-in on load ─────────────────────────────── */
+.page-enter {
+    animation: page-enter 0.2s ease forwards;
+}
+
+@keyframes page-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Will-change hints for animated elements ──────────────────── */
+.radar-sweep,
+.animate-float,
+.hologram-flicker,
+.radar-pulse,
+.pulse-red {
+    will-change: transform, opacity;
+}
+
+/* ─── Reduced motion preference ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    html {
+        scroll-behavior: auto;
+    }
+}
+
 /* ─── Toast Notification System ────────────────────────────────── */
 .toast-container {
     position: fixed;

@@ -92,13 +92,19 @@
   function formatTimestamp(ts) {
     if (!ts) return "—";
     try {
-      var d = new Date(ts + (ts.includes("T") ? "" : "T00:00:00"));
+      var isoStr = ts;
+      if (isoStr.indexOf(" ") !== -1) {
+        isoStr = isoStr.replace(" ", "T");
+      } else if (isoStr.indexOf("T") === -1) {
+        isoStr += "T00:00:00";
+      }
+      var d = new Date(isoStr);
       if (isNaN(d.getTime())) return ts;
       var now = new Date();
       var diff = now - d;
-      if (diff < 60000) return "Just now";
-      if (diff < 3600000) return Math.floor(diff / 60000) + "m ago";
-      if (diff < 86400000) return Math.floor(diff / 3600000) + "h ago";
+      if (diff >= 0 && diff < 60000) return "Just now";
+      if (diff >= 0 && diff < 3600000) return Math.floor(diff / 60000) + "m ago";
+      if (diff >= 0 && diff < 86400000) return Math.floor(diff / 3600000) + "h ago";
       var opts = { month: "short", day: "numeric" };
       if (d.getFullYear() !== now.getFullYear()) opts.year = "numeric";
       return d.toLocaleDateString("en-US", opts);
@@ -125,7 +131,7 @@
 
     // Content
     var content = document.createElement("div");
-    content.className = "flex-1 bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 timeline-card";
+    content.className = "flex-1 bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 timeline-card-content";
     content.style.transition = "all 0.3s ease";
 
     content.innerHTML =
@@ -153,11 +159,13 @@
     label.className = "font-label-caps text-[9px] text-on-surface-variant/50 uppercase tracking-widest bg-background px-3 py-1 rounded-full border border-white/5";
     try {
       var d = new Date(dateStr + "T00:00:00");
-      var now = new Date();
-      var diff = now - d;
-      if (diff < 86400000 && d.getDate() === now.getDate()) {
+      var today = new Date();
+      var yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+
+      if (d.toDateString() === today.toDateString()) {
         label.textContent = "Today";
-      } else if (diff < 172800000 && d.getDate() === now.getDate() - 1) {
+      } else if (d.toDateString() === yesterday.toDateString()) {
         label.textContent = "Yesterday";
       } else {
         label.textContent = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });

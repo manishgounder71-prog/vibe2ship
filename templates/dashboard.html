@@ -417,7 +417,9 @@
       const az = document.getElementById('azimuth-display');
       if (az) { az.innerText = `AZIMUTH: ${(Math.random() * 360).toFixed(1)}`; }
   };
-  setInterval(updateAzimuth, 2000);
+  if (document.getElementById('azimuth-display')) {
+    FutureShield.addInterval('azimuth', updateAzimuth, 8000);
+  }
 
   const fetchStatus = async () => {
       FutureShield.showSkeleton('status-skeleton', true);
@@ -647,8 +649,8 @@
   fetchStatus();
   fetchGoals();
   updateLastBackupIndicator();
-  setInterval(() => { fetchStatus(); fetchGoals(); }, 3000);
-  setInterval(updateLastBackupIndicator, 30000);
+  FutureShield.addInterval('dashboard-refresh', function() { fetchStatus(); fetchGoals(); }, 15000);
+  FutureShield.addInterval('backup-indicator', updateLastBackupIndicator, 30000);
 </script>
 <script>
   const generateSummary = async () => {

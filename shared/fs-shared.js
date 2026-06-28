@@ -12,6 +12,48 @@ window.FutureShield = window.FutureShield || {};
 (function (ns) {
   "use strict";
 
+  // ─── Page Visibility & Interval Management ──────────────────────
+  var _pageIntervals = {};
+  var _intervalCounter = 0;
+  var _pageHidden = false;
+
+  // Track page visibility for throttling animations
+  document.addEventListener("visibilitychange", function () {
+    _pageHidden = document.hidden;
+  });
+
+  // Register an interval that gets cleaned up on navigation/reload
+  // Returns the interval ID so callers can still clear it manually
+  ns.addInterval = function (key, fn, ms) {
+    if (_pageIntervals[key]) {
+      clearInterval(_pageIntervals[key]);
+    }
+    var id = setInterval(fn, ms);
+    _pageIntervals[key] = id;
+    return id;
+  };
+
+  // Remove a registered interval by key
+  ns.removeInterval = function (key) {
+    if (_pageIntervals[key]) {
+      clearInterval(_pageIntervals[key]);
+      delete _pageIntervals[key];
+    }
+  };
+
+  // Clean ALL registered intervals (called on page unload or SPA nav)
+  ns.clearAllIntervals = function () {
+    Object.keys(_pageIntervals).forEach(function (k) {
+      clearInterval(_pageIntervals[k]);
+    });
+    _pageIntervals = {};
+  };
+
+  // On page unload, clear all registered intervals automatically
+  window.addEventListener("beforeunload", function () {
+    ns.clearAllIntervals();
+  });
+
   // ─── WebGL Neural Network Shader ───────────────────────────────
   ns.initShader = function (canvasId) {
     var canvas = document.getElementById(canvasId);
@@ -87,16 +129,32 @@ window.FutureShield = window.FutureShield || {};
       }
     });
 
+    var _lastRenderTime = 0;
+    var _rafId = null;
+
     function render(t) {
+      if (_pageHidden) {
+        // Page is hidden — throttle to ~1 fps and skip heavy draw
+        if (t - _lastRenderTime < 1000) {
+          _rafId = requestAnimationFrame(render);
+          return;
+        }
+        _lastRenderTime = t;
+      }
       if (typeof ResizeObserver === "undefined") syncSize();
       gl.viewport(0, 0, canvas.width, canvas.height);
       if (uTime) gl.uniform1f(uTime, t * 0.001);
       if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
       if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      requestAnimationFrame(render);
+      _rafId = requestAnimationFrame(render);
     }
-    render(0);
+    _rafId = requestAnimationFrame(render);
+
+    // Stop render loop on page unload to free GPU resources
+    window.addEventListener("beforeunload", function () {
+      if (_rafId) cancelAnimationFrame(_rafId);
+    });
   };
 
   // ─── Skeleton Loader Helper ────────────────────────────────────
@@ -137,8 +195,17 @@ window.FutureShield = window.FutureShield || {};
     requestAnimationFrame(step);
   };
 
+  // ─── Add page-enter animation class to <main> ────────────────
+  function addPageEnterAnimation() {
+    var main = document.querySelector("main");
+    if (main && !main.classList.contains("page-enter")) {
+      main.classList.add("page-enter");
+    }
+  }
+
   // ─── Initialize All Modules ────────────────────────────────────
   ns.init = function () {
+    addPageEnterAnimation();
     ns.initShader("shader-canvas-ANIMATION_2");
     ns.initParallax();
 
@@ -200,9 +267,9 @@ window.FutureShield = window.FutureShield || {};
       setTimeout(ns.addDemoCTA, 1000);
     }
 
-    // Periodically check AI status
+    // Periodically check AI status (registered for managed cleanup)
     if (typeof ns.checkAIStatus === "function") {
-      setInterval(ns.checkAIStatus, 15000);
+      ns.addInterval('ai-status', ns.checkAIStatus, 15000);
     }
   };
 
