@@ -45,8 +45,15 @@ async def validate_api_access_token(request: Request, call_next):
         # SSE endpoints accept token via query param (EventSource can't set headers)
         if request.method == "GET":
             token_qs = request.query_params.get("token", "")
-            if token_qs and token_qs == API_ACCESS_TOKEN:
-                return await call_next(request)
+            if token_qs:
+                if token_qs == API_ACCESS_TOKEN:
+                    return await call_next(request)
+                try:
+                    from routes.auth import _decode_token
+                    _decode_token(token_qs)
+                    return await call_next(request)
+                except Exception:
+                    pass
 
         auth_header = request.headers.get("Authorization")
         valid = False

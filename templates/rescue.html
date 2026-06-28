@@ -102,8 +102,7 @@
   const fetchThreats = async () => {
     FutureShield.showSkeleton('threats-skeleton', true);
     try {
-      const token = localStorage.getItem('shield_access_token') || '';
-      const response = await fetch('/api/threats', { headers: { 'Authorization': `Bearer ${token}` } });
+      const response = await fetch('/api/threats');
       if (!response.ok) { FutureShield.showSkeleton('threats-skeleton', false); return; }
       const data = await response.json();
       FutureShield.showSkeleton('threats-skeleton', false);
@@ -152,7 +151,7 @@
     typingStatus.className = "text-error animate-pulse";
     actionSteps.innerHTML = '<h4 class="font-label-caps text-[11px] text-tertiary mb-1 uppercase tracking-wide">RECOVERY VECTOR PLAN:</h4>';
     actionSteps.classList.add('hidden');
-    const token = localStorage.getItem('shield_access_token') || '';
+    const token = FutureShield.auth.getToken() || '';
     let streamFailed = false;
     let fullCodeText = '';
     const eventSource = new EventSource(`/api/rescue/stream?token=${encodeURIComponent(token)}`);
