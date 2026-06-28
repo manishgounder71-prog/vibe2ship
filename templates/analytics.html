@@ -344,7 +344,7 @@
     content.classList.add("hidden");
     error.classList.add("hidden");
 
-    fetch("/api/analytics/focus?days=" + days)
+    fetch("/api/analytics/focus?days=" + days + "&_t=" + new Date().getTime())
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
