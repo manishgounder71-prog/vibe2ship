@@ -52,8 +52,17 @@ async def validate_api_access_token(request: Request, call_next):
         valid = False
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ", 1)[1]
+            # Check shared API token first (legacy/backward compat)
             if token == API_ACCESS_TOKEN:
                 valid = True
+            else:
+                # Also accept valid JWT tokens (user-authenticated requests)
+                try:
+                    from routes.auth import _decode_token
+                    _decode_token(token)
+                    valid = True
+                except Exception:
+                    valid = False
 
         if not valid:
             return JSONResponse(
